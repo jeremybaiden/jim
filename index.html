@@ -152,7 +152,7 @@
       '<button class="jw-btn primary" id="jwSend">Email me a sign-in link</button>' +
       '<div class="jw-msg" id="jwMsg" role="status"></div>' +
       '<button class="jw-guest" id="jwGuest">' + (fromSettings ? "Not now" : "Continue as guest") + '</button>' +
-      '<div class="jw-fine">As a guest, everything stays in this browser. If you sign in later, what you\'ve logged moves into your account. Your data is private to you and never sold.</div></div>';
+      '<div class="jw-fine">As a guest, everything stays in this browser. If you sign in later, what you\'ve logged moves into your account. Your data is private to you and never sold.</div><div class="jw-fine">© ' + new Date().getFullYear() + ' Jeremy Baiden. All rights reserved.</div></div>';
     document.body.appendChild(bg);
     var msg = function (t, err) { var m = document.getElementById("jwMsg"); m.textContent = t; m.className = "jw-msg" + (err ? " err" : ""); };
     document.getElementById("jwGoogle").onclick = async function () {
@@ -640,6 +640,8 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
 #bigTimer .row button{font-size:20px;min-height:56px;padding:12px 20px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .loc-banner{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2);margin-bottom:12px}
+.copy{margin:28px 0 6px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;line-height:1.5;color:var(--muted);text-align:center}
+.copy a{color:inherit;text-decoration:underline}
 /* wide screens: use the space */
 .side-foot,.side-brand{display:none!important}
 
@@ -969,6 +971,7 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
     </div>
     <div id="progHistory" style="display:none"><div id="histList"></div></div>
   </section>
+  <footer class="copy">© <span id="copyYear">2026</span> Jeremy Baiden. All rights reserved. Jim, its name, logo, design and content may not be copied or reused without permission. Exercise information from <a href="https://musclewiki.com/" target="_blank" rel="noopener">MuscleWiki</a>.</footer>
 </div>
 
 <nav class="tabs" aria-label="Sections">
@@ -2729,6 +2732,7 @@ document.addEventListener("click",e=>{
   const a=e.target.closest("[data-clall]"); if(a){ const v=a.closest(".view"); v.querySelectorAll(".card[data-clk]").forEach(c=>{ if(a.dataset.clall==="hide") clSet.add(c.dataset.clk); else clSet.delete(c.dataset.clk); }); clSave(); clEnhance(); if(v.id==="view-progress"){ coachOpen=a.dataset.clall!=="hide"; ls.set("liftlog.coachOpen",coachOpen); applyCoach(); } if(a.dataset.clall==="show") setTimeout(()=>{ if(currentTab==="progress") renderProgress(); },0); }
 },true);
 
+{ const y=new Date().getFullYear(); const el=document.getElementById("copyYear"); if(el&&y>2026) el.textContent="2026–"+y; }
 let currentTab="home";
 const MORE_TABS=["more","library","guide","settings","photos","bw"];
 function showTab(t){
