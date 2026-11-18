@@ -12,5 +12,12 @@ copyright holder.
 You may view the source code on GitHub and use the hosted app at
 https://jeremybaiden.github.io/jim/ for your own personal training.
 
-Third-party software and data used by the app (such as Chart.js, supabase-js
-and exercise information from MuscleWiki) remain under their own terms.
+Exercise information in Jim (exercise names, muscles worked, muscle
+subgroups, difficulty level and compound/isolation type) is courtesy of
+MuscleWiki.com, is the property of MuscleWiki SEZC, and is not part of the
+Work or covered by this notice. It is used with credit and links to
+musclewiki.com for free, non-profit use under MuscleWiki's terms. Reuse of
+that information requires MuscleWiki's permission.
+
+Third-party software used by the app (such as Chart.js and supabase-js)
+remains under its own licence.

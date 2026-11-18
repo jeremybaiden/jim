@@ -152,7 +152,7 @@
       '<button class="jw-btn primary" id="jwSend">Email me a sign-in link</button>' +
       '<div class="jw-msg" id="jwMsg" role="status"></div>' +
       '<button class="jw-guest" id="jwGuest">' + (fromSettings ? "Not now" : "Continue as guest") + '</button>' +
-      '<div class="jw-fine">As a guest, everything stays in this browser. If you sign in later, what you\'ve logged moves into your account. Your data is private to you and never sold.</div><div class="jw-fine">© ' + new Date().getFullYear() + ' Jeremy Baiden. All rights reserved.</div></div>';
+      '<div class="jw-fine">As a guest, everything stays in this browser. If you sign in later, what you\'ve logged moves into your account. Your data is private to you and never sold.</div><div class="jw-fine">Exercise information courtesy of <a href="https://musclewiki.com/" target="_blank" rel="noopener" style="color:inherit">MuscleWiki.com</a>.<br>© ' + new Date().getFullYear() + ' Jeremy Baiden. All rights reserved.</div></div>';
     document.body.appendChild(bg);
     var msg = function (t, err) { var m = document.getElementById("jwMsg"); m.textContent = t; m.className = "jw-msg" + (err ? " err" : ""); };
     document.getElementById("jwGoogle").onclick = async function () {
@@ -642,6 +642,11 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
 .loc-banner{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2);margin-bottom:12px}
 .copy{margin:28px 0 6px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;line-height:1.5;color:var(--muted);text-align:center}
 .copy a{color:inherit;text-decoration:underline}
+.mw-credit{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:600;color:var(--accent);text-decoration:none}
+.mw-credit:hover{text-decoration:underline}
+.mw-src{font-size:12px;color:var(--muted)}.mw-src a{color:inherit}
+.mw-banner{background:var(--accent-soft);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13.5px;line-height:1.5;margin:4px 0 10px;color:var(--text-2)}
+.mw-banner a{color:var(--accent)}
 /* wide screens: use the space */
 .side-foot,.side-brand{display:none!important}
 
@@ -722,7 +727,7 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
     <div class="more-grid">
       <button class="more-card" data-go="photos"><span class="mi">📸</span><b>Progress photos</b><span>Your own before-and-after photos, sorted by month. Compare any two side by side. Just for you.</span></button>
       <button class="more-card" data-go="bw"><span class="mi">⚖️</span><b>Body weight</b><span>Log your weight and see the trend, with a 7-day average that smooths out daily ups and downs.</span></button>
-      <button class="more-card" data-go="library"><span class="mi">🏋️</span><b>Exercise library</b><span>349+ exercises with the exact muscles each one hits. Filter by muscle, equipment, type and level.</span></button>
+      <button class="more-card" data-go="library"><span class="mi">🏋️</span><b>Exercise library</b><span>349+ exercises from MuscleWiki.com with the exact muscles each one hits. Filter by muscle, equipment, type and level.</span></button>
       <button class="more-card" data-go="guide"><span class="mi">📘</span><b>Training guide</b><span>Splits, sets per week, progressive overload, rest times, plyometrics and smart shopping.</span></button>
       <button class="more-card" data-go="settings"><span class="mi">⚙️</span><b>Settings</b><span>Your name, goals, set targets, rep ranges, theme, accessibility and account.</span></button>
       <button class="more-card" data-go="tour"><span class="mi">🎬</span><b>Demo tutorial</b><span>Replay the guided tour of the app using Eric's sample data.</span></button>
@@ -835,7 +840,7 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
   <!-- ============ PLAN ============ -->
   <section class="view" id="view-plan">
     <h2>Plan</h2>
-    <p class="sub">Pick a split for where you train, then adjust the sessions to suit you.</p>
+    <p class="sub">Pick a split for where you train, then adjust the sessions to suit you. Exercises and muscle information courtesy of <a href="https://musclewiki.com/" target="_blank" rel="noopener">MuscleWiki.com</a>.</p>
 
     <div class="card">
       <h3>Start from a split</h3>
@@ -861,7 +866,8 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
   <section class="view" id="view-library">
     <button class="back-more" data-go="more">‹ More</button>
     <h2>Exercise library</h2>
-    <p class="sub">Exercise list from <a href="https://musclewiki.com/exercises">MuscleWiki</a>. Tap a name to watch the demo. Each exercise shows its <b>main</b> muscles and the ones it <b>also works</b>, with the exact region (e.g. upper chest, side delts). Turn on <b>Advanced</b> to filter by subgroups like the medial head of the triceps.</p>
+    <div class="mw-banner">Exercise information courtesy of <a href="https://musclewiki.com/" target="_blank" rel="noopener"><b>MuscleWiki.com</b></a>: exercise names, the muscles each one works, subgroups, level and type. Tap any exercise to see MuscleWiki's demo videos and instructions on their site.</div>
+    <p class="sub"> Tap a name to watch the demo. Each exercise shows its <b>main</b> muscles and the ones it <b>also works</b>, with the exact region (e.g. upper chest, side delts). Turn on <b>Advanced</b> to filter by subgroups like the medial head of the triceps.</p>
     <div class="card" id="libFilters">
       <h3>Search &amp; filters</h3>
       <input type="search" id="libSearch" placeholder="Search exercises…" aria-label="Search exercises">
@@ -971,7 +977,7 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
     </div>
     <div id="progHistory" style="display:none"><div id="histList"></div></div>
   </section>
-  <footer class="copy">© <span id="copyYear">2026</span> Jeremy Baiden. All rights reserved. Jim, its name, logo, design and content may not be copied or reused without permission. Exercise information from <a href="https://musclewiki.com/" target="_blank" rel="noopener">MuscleWiki</a>.</footer>
+  <footer class="copy">© <span id="copyYear">2026</span> Jeremy Baiden. All rights reserved. Jim, its name, logo, design and content may not be copied or reused without permission. <br>Exercise information (names, muscles worked, subgroups, level and type) courtesy of <a href="https://musclewiki.com/" target="_blank" rel="noopener">MuscleWiki.com</a>, used with credit for non-profit use. Exercise demos and videos are on MuscleWiki.com. Jim is not affiliated with MuscleWiki.</footer>
 </div>
 
 <nav class="tabs" aria-label="Sections">
@@ -1210,6 +1216,8 @@ const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>';
 const ICON_DN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 const mwUrl = slug => "https://musclewiki.com/exercise/"+slug;
+const MW_LINK = '<a href="https://musclewiki.com/" target="_blank" rel="noopener">MuscleWiki.com</a>';
+const mwCredit = x => linkable(x) ? `<a class="mw-credit" href="${mwUrl(x.slug)}" target="_blank" rel="noopener">Exercise info &amp; demo: MuscleWiki.com ↗</a>` : "";
 
 /* ================= STATE ================= */
 let unit = ls.get("liftlog.unit","kg");
@@ -1451,8 +1459,8 @@ function renderLog(){
   if(!draft.exercises.length) list.innerHTML=`<div class="card empty"><b>No exercises yet</b>Start a session above, add one, or browse the library.</div>`;
 }
 function metaHTML(ex,lib){
-  const parts=[]; if(ex.lo) parts.push(`<b>Target ${ex.lo}–${ex.hi} reps</b>`); if(linkable(lib)) parts.push(`<a href="${mwUrl(lib.slug)}">How to do it ↗</a>`);
-  return parts.join(" · ")+(lib&&Object.keys(lib.hits).length?`<br>Works: ${hitsHTML(lib,true)}`:"");
+  const parts=[]; if(ex.lo) parts.push(`<b>Target ${ex.lo}–${ex.hi} reps</b>`); if(linkable(lib)) parts.push(`<a href="${mwUrl(lib.slug)}" target="_blank" rel="noopener">How to do it on MuscleWiki.com ↗</a>`);
+  return parts.join(" · ")+(lib&&Object.keys(lib.hits).length?`<br>Works: ${hitsHTML(lib,true)}${linkable(lib)?` <span class="mw-src">(muscle info: MuscleWiki)</span>`:""}`:"");
 }
 function tipHTML(ex){ const c=coach(ex,editingId); const i=draft.exercises.indexOf(ex); return c?`<span class="coach-k ${c.k}">${c.label}</span><span class="grow">${esc(c.text)}</span>`:""; }
 function refreshExMeta(ei){
@@ -1710,10 +1718,11 @@ function renderLibrary(){
   else tgt.style.display="none";
   renderExForm();
   $("#libList").innerHTML = list.length ? list.map(x=>`<div class="lib-item">
-      <div class="grow">${!linkable(x)?`<span class="lib-name">${esc(x.name)}</span>`:`<a class="lib-name" href="${mwUrl(x.slug)}" style="color:var(--text);text-decoration:none">${esc(x.name)} <span style="color:var(--muted);font-weight:500">↗</span></a>`}
+      <div class="grow">${!linkable(x)?`<span class="lib-name">${esc(x.name)}</span>`:`<a class="lib-name" href="${mwUrl(x.slug)}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none">${esc(x.name)} <span style="color:var(--muted);font-weight:500">↗</span></a>`}
         <div class="lib-meta">${x.custom?'<span class="badge star">Your exercise</span>':""}${x.plyo?'<span class="badge star">⚡ Plyo</span>':""}${x.ll?'<span class="badge">Jim drill</span>':""}${x.edited?'<span class="badge star">Muscles edited</span>':""}${tops.has(x.slug)?'<span class="badge star">★ Top pick</span>':""}<span class="badge">${EQ[x.eq]||"Other"}</span>${x.diff?`<span class="badge">${x.diff}</span>`:""}${x.mech?`<span class="badge">${x.mech==="C"?"Compound":"Isolation"}</span>`:""}</div>
         ${hitsHTML(x)}
         ${NOTES[x.slug]?`<div class="lib-note">${NOTES[x.slug]}</div>`:""}
+        ${mwCredit(x)}
         <button class="btn ghost" style="padding:4px 0;font-size:13px" data-editmus="${esc(x.slug)}">${x.custom?"Edit exercise":"Edit muscles"}</button></div>
       <div class="row" style="gap:4px;flex-shrink:0;flex-direction:column;align-items:stretch">
         <button class="btn sm" data-addlog="${esc(x.slug)}" title="Add to today's workout">+ Log</button>
@@ -1822,7 +1831,7 @@ function renderGuide(){
   const BEST=[["Power (plyometrics)",["jump","broad","upperplyo","rotpower"]],["Chest",["hpush","inclinepush"]],["Back",["vpull","hpull"]],["Shoulders",["vpush","lateral","reardelt"]],["Biceps",["biceps"]],["Triceps",["triceps"]],["Quads",["squat","lunge","quadiso"]],["Hamstrings",["hinge","legcurl"]],["Glutes",["hipthrust","lunge"]],["Calves",["calves"]],["Core",["core"]]];
   const bestHTML=BEST.map(([m,pats])=>{ const list=[]; pats.forEach(p=>topN(p,2).forEach(e=>{ if(!list.includes(e)) list.push(e); }));
     if(!list.length) return `<div class="best-m"><h4>${m}</h4><p class="hint">No good option with this setup. Bands fix this cheaply (see Shopping).</p></div>`;
-    return `<div class="best-m"><h4>${m}</h4><ol>${list.slice(0,4).map(e=>{ const h=e.hits[m]||{regions:[]}; return `<li>${linkable(e)?`<a href="${mwUrl(e.slug)}">${esc(e.name)}</a>`:`<b>${esc(e.name)}</b>`}${h&&h.regions.length?` <span class="r">· ${h.regions.join(", ").toLowerCase()}</span>`:""}${NOTES[e.slug]?`<div class="r">${NOTES[e.slug]}</div>`:""}</li>`; }).join("")}</ol></div>`; }).join("");
+    return `<div class="best-m"><h4>${m}</h4><ol>${list.slice(0,4).map(e=>{ const h=e.hits[m]||{regions:[]}; return `<li>${linkable(e)?`<a href="${mwUrl(e.slug)}" target="_blank" rel="noopener">${esc(e.name)}</a>`:`<b>${esc(e.name)}</b>`}${h&&h.regions.length?` <span class="r">· ${h.regions.join(", ").toLowerCase()}</span>`:""}${NOTES[e.slug]?`<div class="r">${NOTES[e.slug]}</div>`:""}</li>`; }).join("")}</ol></div>`; }).join("");
   const sec=(id,title,body)=>`<details class="g" data-g="${id}" ${guideOpen.has(id)?"open":""}><summary>${title}</summary><div class="gb">${body}</div></details>`;
   $("#guideBody").innerHTML=
   sec("sets","How many sets per week?",`
@@ -1878,6 +1887,7 @@ function renderGuide(){
     <p>Find them under <b>⚡ Plyo &amp; sport</b> in the Library, or create a <b>Sports &amp; athletic</b> split on the Plan tab (Athletic power, Jump higher, Speed &amp; agility, In-season maintenance).</p>
     <p class="src">Sources: <a href="https://www.frontiersin.org/articles/10.3389/fphys.2024.1435011/full">Xie et al. 2024, Frontiers in Physiology</a> · <a href="https://biomedcentral-bmcsportsscimedrehabil.publicaciones.saludcastillayleon.es/articles/10.1186/s13102-025-01113-6">BMC Sports Sci Med Rehabil 2025</a></p>`)
   + sec("best",`Best exercises: ${esc(LOCS[loc].label)}`,`
+    <p class="mw-src" style="margin:0 0 6px">Exercise and muscle information courtesy of ${MW_LINK}.</p>
     <p>Top picks for <b>${esc(LOCS[loc].label)}</b>, chosen for full range of motion, easy progression and a good stretch. The region shows which part of the muscle each one targets. Change your setup at the top of the screen to see other picks.</p>
     ${bestHTML}`)
   + sec("time","Time management: get more done in less time",`
@@ -2325,7 +2335,12 @@ function renderSettings(){
     <div class="fld"><label>Units</label><div class="unit-toggle" id="sUnits"><button data-u="kg" class="${unit==="kg"?"on":""}">kg</button><button data-u="lb" class="${unit==="lb"?"on":""}">lb</button></div></div>
   </div></div>
 
-  <div class="row" style="margin-bottom:12px"><button class="btn" id="sReset">Reset to defaults</button><button class="btn primary grow" id="sSave">Save settings</button></div>`;
+  <div class="row" style="margin-bottom:12px"><button class="btn" id="sReset">Reset to defaults</button><button class="btn primary grow" id="sSave">Save settings</button></div>
+  <div class="card" id="creditsCard"><h3>About &amp; credits</h3>
+    <p class="hint" style="margin:0 0 8px"><b>Exercise information courtesy of <a href="https://musclewiki.com/" target="_blank" rel="noopener">MuscleWiki.com</a>.</b> The exercise names, the muscles each exercise works, muscle subgroups, difficulty level and compound/isolation type in Jim come from MuscleWiki, and every exercise links back to its MuscleWiki page for demo videos and instructions. Thank you to the MuscleWiki team. Jim is a free, non-profit app and is not affiliated with or endorsed by MuscleWiki.</p>
+    <p class="hint" style="margin:0 0 8px">Training guidance is based on published research, linked in the Training guide (for example <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8884877/" target="_blank" rel="noopener">PMC8884877</a> and <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5684266/" target="_blank" rel="noopener">Ralston et al. 2017</a>).</p>
+    <p class="hint" style="margin:0">Charts by Chart.js. © ${new Date().getFullYear()} Jeremy Baiden. Jim's name, logo and design are his; exercise information remains the property of MuscleWiki.</p>
+  </div>`;
   if(signed && !demo){ $("#acctName").textContent=meInfo.name||"Signed in"; $("#acctEmail").textContent=meInfo.email||"Email hidden by your organization's settings"; }
   try{ clEnhance(); }catch(e){}
 }
@@ -2427,7 +2442,7 @@ let autoDemo=false;
 const TOUR=[
   {tab:"log",t:"Log a workout",d:"Meet Eric, a sample user who trains 2 upper days and 1 lower day a week. Start a session and Jim fills in the weights to use. A rest timer runs between sets.",el:null},
   {tab:"plan",t:"Plan",d:"Eric's sessions: 2 upper days and 1 lower day. The bars show his planned weekly sets per muscle against the target range.",el:"#planVol"},
-  {tab:"library",t:"Exercise library",d:"Filter by several muscles, equipment, type and level at once. Each exercise shows its main muscles and the exact regions it hits.",el:"#muscleChips"},
+  {tab:"library",t:"Exercise library",d:"Filter by several muscles, equipment, type and level at once. Each exercise shows its main muscles and the exact regions it hits, with information courtesy of MuscleWiki.com.",el:"#muscleChips"},
   {tab:"home",t:"Meet Jim",d:"Your home screen. Jim tells you where you are in the week, lines up today's session with the weights to use, and leaves notes on what to change.",el:"#homeBody .today"},
   {tab:"progress",view:"history",t:"History",d:"Every workout Eric logged, as a table: sets, weight, reps per set, reps in reserve, and the change since last time.",el:"#progHistory"},
   {tab:"progress",view:"charts",t:"Pick any period",d:"Use this menu to look at the last 2, 5 or any number of weeks, a start-to-end range, or mix & match single weeks grouped by month and year.",el:".week-nav"},
@@ -2686,11 +2701,12 @@ const tryCard=x=>`<div class="try-card">
       <div class="lib-meta" style="margin:0">${x.plyo?'<span class="badge star">⚡ Plyo</span>':""}<span class="badge">${EQ[x.eq]||"Other"}</span>${x.diff?`<span class="badge">${x.diff}</span>`:""}${x.mech?`<span class="badge">${x.mech==="C"?"Compound":"Isolation"}</span>`:""}</div>
       <div class="tn">${linkable(x)?`<a href="${mwUrl(x.slug)}" target="_blank" rel="noopener">${esc(x.name)} <span style="color:var(--muted);font-weight:500">↗</span></a>`:esc(x.name)}</div>
       ${hitsHTML(x)}
+      ${mwCredit(x)}
       <div class="acts">${linkable(x)?`<a class="btn sm" href="${mwUrl(x.slug)}" target="_blank" rel="noopener" style="flex:1;justify-content:center;text-decoration:none;display:flex">▶ Demo</a>`:""}<button class="btn sm primary" data-addlog="${esc(x.slug)}">+ Log</button><button class="btn sm" data-addtpl="${esc(x.slug)}">+ Session</button></div></div>`;
 function renderTry(shuffle){
   if(shuffle||!tryPicks||tryLoc!==loc) pickTry();
   $$("[data-try]").forEach(el=>{
-    el.innerHTML=`<div class="try-head"><div><h3>Try something new</h3><div class="hint" style="margin:2px 0 0">Random picks for ${LOCS[loc].label.toLowerCase()}. Swipe to see more.</div></div><button class="btn sm try-shuffle">🔀 Shuffle</button></div>
+    el.innerHTML=`<div class="try-head"><div><h3>Try something new</h3><div class="hint" style="margin:2px 0 0">Random picks for ${LOCS[loc].label.toLowerCase()}, with exercise information courtesy of ${MW_LINK}. Swipe to see more.</div></div><button class="btn sm try-shuffle">🔀 Shuffle</button></div>
       <div class="try-wrap"><div class="try">${tryPicks.map(tryCard).join("")}</div>
       <button class="try-arrow try-prev" style="left:-20px" aria-label="Previous">‹</button><button class="try-arrow try-next" style="right:-20px" aria-label="Next">›</button></div>
       <div class="try-dots"></div>`;
