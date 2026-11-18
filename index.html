@@ -236,6 +236,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;ma
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.02em}
 .brand{gap:8px}.logo{height:46px;width:auto;border-radius:12px;display:block}
 html:not(.dk) .logo-d,html.dk .logo-l{display:none!important}
+/* main logo: always the white version (brighter), in both themes */
+img.logo.logo-d{display:none!important}html.dk img.logo.logo-l{display:block!important}
 .logo-l{box-shadow:0 0 0 1px var(--line)}
 .tag{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0}
 .brand-t{display:flex;flex-direction:column;line-height:1.05}.brand-t small{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0}
