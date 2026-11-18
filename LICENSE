@@ -1,0 +1,16 @@
+Copyright (c) 2026 Jeremy Baiden. All rights reserved.
+
+Jim, including its name, logo, visual design, written content and source code
+(the "Work"), is the property of Jeremy Baiden.
+
+This repository is public so the website can be hosted. That does not grant
+any licence. No permission is given to copy, modify, merge, publish,
+distribute, sublicense, sell, or create derivative works from any part of
+the Work, in whole or in part, without prior written permission from the
+copyright holder.
+
+You may view the source code on GitHub and use the hosted app at
+https://jeremybaiden.github.io/jim/ for your own personal training.
+
+Third-party software and data used by the app (such as Chart.js, supabase-js
+and exercise information from MuscleWiki) remain under their own terms.
