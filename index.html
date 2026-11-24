@@ -231,7 +231,7 @@
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 a{color:var(--accent)}
-.wrap{max-width:780px;margin:0 auto;padding:14px 16px 100px}
+.wrap{max-width:780px;margin:0 auto;padding:14px 16px 76px}
 header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 14px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.02em}
 .brand{gap:8px}.logo{height:46px;width:auto;border-radius:12px;display:block}
@@ -307,7 +307,7 @@ img.logo.logo-d{display:none!important}html.dk img.logo.logo-l{display:block!imp
 }
 /* desktop: bottom bar (same as phone, roomier) */
 @media(min-width:980px){
-  .wrap{padding-bottom:110px}
+  .wrap{padding-bottom:84px}
   body nav.tabs .inner{max-width:720px;width:100%;gap:6px;padding:6px 12px}
   body nav.tabs .inner button[data-tab]{flex-direction:row;justify-content:center;gap:10px;font-size:14.5px;padding:12px 10px;border-radius:12px;margin:4px 0}
   body nav.tabs .inner button[data-tab].on{background:var(--accent-soft)}
@@ -640,7 +640,9 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
 #bigTimer .row button{font-size:20px;min-height:56px;padding:12px 20px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .loc-banner{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2);margin-bottom:12px}
-.copy{margin:28px 0 6px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;line-height:1.5;color:var(--muted);text-align:center}
+.wrap{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;box-sizing:border-box}
+.wrap>*{min-width:0}
+.copy{margin-top:auto;margin-bottom:0;padding-top:14px;border-top:1px solid var(--line);font-size:12px;line-height:1.5;color:var(--muted);text-align:center}
 .copy a{color:inherit;text-decoration:underline}
 .mw-credit{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:600;color:var(--accent);text-decoration:none}
 .mw-credit:hover{text-decoration:underline}
@@ -658,7 +660,7 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
   header .brand{flex-shrink:0}
 }
 @media(min-width:1280px){
-  body .wrap{max-width:1180px;padding:20px 36px 60px}
+  body .wrap{max-width:1180px;padding:20px 36px 84px}
   .more-grid{grid-template-columns:repeat(3,1fr)}
   .home-grid{grid-template-columns:1.3fr 1fr 1fr;align-items:start}
   .home-grid .span2{grid-column:auto}
