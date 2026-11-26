@@ -824,6 +824,12 @@ nav.tabs{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inse
 .modal-bg,#bigTimer{padding-top:calc(20px + env(safe-area-inset-top));padding-bottom:calc(20px + env(safe-area-inset-bottom))}
 .modal{max-height:100%;overflow:auto}
 .setup-l{font-size:13px;font-weight:700;color:var(--text-2);margin:14px 0 6px}
+.trange{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.trange .tr-f{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--text-2)}
+.trange input{width:70px;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:16px;text-align:center}
+.trange input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.trange .tr-to{font-size:14px;color:var(--muted)}
+.tr-reset{margin-top:6px;font-size:13px}
 /* iPhone zooms the whole page when you tap a box with text under 16px: keep every box at 16px+ there */
 @supports (-webkit-touch-callout:none){select,input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea{font-size:max(16px,1em)}}
 /* full-screen views (rest timer, photo viewer, dialogs) have their buttons at the bottom: show messages at the top instead */
@@ -1429,8 +1435,16 @@ const templates = () => items.filter(x=>x.type==="template").sort((a,b)=>(a.orde
 function availEq(l){ const k=LOCS[l||loc]?(l||loc):"gym"; const own=S().locEq&&S().locEq[k]; return new Set(Array.isArray(own)?["bw",...own]:LOCS[k].eq); }
 /* ---- tailoring: equipment swaps and time fitting ---- */
 const SLUG2PAT={}; for(const p in PATTERNS) for(const s of PATTERNS[p].l) if(!SLUG2PAT[s]) SLUG2PAT[s]=p;
-const MIN_OPTS=[0,20,30,45,60,75,90];
-function minLabel(m){ return m?m+" min":"No limit"; }
+// time per workout is a range you type: from lo to hi minutes (either can be left empty)
+const usualRange=()=>({lo:+S().minMinutes||0,hi:+S().minutes||0});
+function rangeLabel(r){ return r.lo&&r.hi?(r.lo===r.hi?`${r.hi} min`:`${r.lo}–${r.hi} min`):r.hi?`up to ${r.hi} min`:r.lo?`at least ${r.lo} min`:"No limit"; }
+function cleanRange(lo,hi){ const c=v=>{ v=Math.round(+v||0); return v?Math.min(240,Math.max(5,v)):0; }; lo=c(lo); hi=c(hi); if(lo&&hi&&lo>hi) [lo,hi]=[hi,lo]; return {lo,hi}; }
+// the two boxes, used in Your setup and on the Train tab
+function rangeInputs(r,key,label){ return `<div class="trange" data-trange="${key}" role="group" aria-label="${label}">
+  <label class="tr-f"><span>From</span><input type="number" inputmode="numeric" min="5" max="240" step="5" placeholder="any" value="${r.lo||""}" data-tr="lo" aria-label="${label}: from (minutes)"></label>
+  <span class="tr-to">to</span>
+  <label class="tr-f"><input type="number" inputmode="numeric" min="5" max="240" step="5" placeholder="no limit" value="${r.hi||""}" data-tr="hi" aria-label="${label}: to (minutes)"><span>min</span></label>
+</div>`; }
 // swap any exercise that needs equipment you don't have for one that trains the same movement
 function tailorEquip(exs){
   const av=availEq(), used=new Set(exs.map(x=>(BY_NAME[(x.name||"").toLowerCase()]||{}).slug).filter(Boolean)); const out=[], swaps=[], dropped=[];
@@ -1444,25 +1458,30 @@ function tailorEquip(exs){
   return {exs:out,swaps,dropped};
 }
 // trim (or top up) a session so it fits the minutes you have; returns a new exercise list
-function tailorTime(exs,minutes,superset){
-  let E=exs.map(x=>({...x})); if(!minutes) return {exs:E,changed:false};
+function tailorTime(exs,minutes,superset,atLeast){
+  let E=exs.map(x=>({...x})); atLeast=+atLeast||0; if(!minutes&&!atLeast) return {exs:E,changed:false};
   const est=()=>estMinutes({exercises:E,superset}); const isComp=x=>{ const l=BY_NAME[(x.name||"").toLowerCase()]; const p=l&&SLUG2PAT[l.slug]; return p?!!(PATTERNS[p].c||PATTERNS[p].p):x.lo<10; };
   const start=est(); let guard=0;
-  const setsDown=(min,compToo)=>{ while(est()>minutes&&guard++<200){ const i=E.map((x,k)=>[x,k]).filter(([x])=>x.sets>min&&(compToo||!isComp(x))).sort((a,b)=>isComp(a[0])-isComp(b[0])||b[0].sets-a[0].sets||b[1]-a[1])[0]; if(!i) break; E[i[1]].sets--; } };
-  const restTo=(c,a)=>{ if(est()>minutes) E.forEach(x=>{ x.rest=Math.min(x.rest||90,isComp(x)?c:a); }); };
+  const setsDown=(min,compToo)=>{ while(minutes&&est()>minutes&&guard++<200){ const i=E.map((x,k)=>[x,k]).filter(([x])=>x.sets>min&&(compToo||!isComp(x))).sort((a,b)=>isComp(a[0])-isComp(b[0])||b[0].sets-a[0].sets||b[1]-a[1])[0]; if(!i) break; E[i[1]].sets--; } };
+  const restTo=(c,a)=>{ if(minutes&&est()>minutes) E.forEach(x=>{ x.rest=Math.min(x.rest||90,isComp(x)?c:a); }); };
   setsDown(3,true);          // 1) nothing above 3 sets
   restTo(120,60);            // 2) a bit less rest
   setsDown(2,false);         // 3) accessories down to 2 sets
   restTo(90,45);             // 4) shortest sensible rests
-  while(est()>minutes&&E.length>3&&guard++<300){ let k=-1; for(let j=E.length-1;j>=0;j--) if(!isComp(E[j])){ k=j; break; } if(k<0) break; E.splice(k,1); } // 5) drop accessories from the end
+  while(minutes&&est()>minutes&&E.length>3&&guard++<300){ let k=-1; for(let j=E.length-1;j>=0;j--) if(!isComp(E[j])){ k=j; break; } if(k<0) break; E.splice(k,1); } // 5) drop accessories from the end
   setsDown(2,true);          // 6) big lifts down to 2 sets
-  while(est()>minutes&&E.length>2&&guard++<400) E.pop(); // 7) last resort: fewer exercises
-  // 8) plenty of time left: add a set to the big lifts first (max 5)
-  guard=0; while(est()+8<=minutes&&guard++<12){ const i=E.map((x,k)=>[x,k]).filter(([x])=>x.sets<5).sort((a,b)=>isComp(b[0])-isComp(a[0])||a[0].sets-b[0].sets||a[1]-b[1])[0]; if(!i) break; E[i[1]].sets++; if(est()>minutes){ E[i[1]].sets--; break; } }
+  while(minutes&&est()>minutes&&E.length>2&&guard++<400) E.pop(); // 7) last resort: fewer exercises
+  // 8) time to spare: add sets to the big lifts first (max 5) — up to your minimum if you set one, otherwise close to your limit
+  const want=()=>atLeast?est()<atLeast:est()+8<=minutes;
+  guard=0; while(want()&&guard++<20){ const i=E.map((x,k)=>[x,k]).filter(([x])=>x.sets<5).sort((a,b)=>isComp(b[0])-isComp(a[0])||a[0].sets-b[0].sets||a[1]-b[1])[0]; if(!i) break; E[i[1]].sets++; if(minutes&&est()>minutes){ E[i[1]].sets--; break; } }
   return {exs:E,changed:est()!==start};
 }
-let todayMin=null; // minutes for today's workout (null = use your usual time)
-const minsToday=()=>todayMin==null?(+S().minutes||0):todayMin;
+let todayRange=null; // today's time range (null = your usual time)
+// which range box group is being typed in ("usual" / "today"), so redraws don't wipe what you're typing
+let trCard=null; // the card holding the boxes you're typing in
+document.addEventListener("focusin",e=>{ const g=e.target.closest&&e.target.closest("[data-trange]"); if(g) trCard=g.closest(".setup-card,#todayTime"); });
+document.addEventListener("focusout",e=>{ const g=e.target.closest&&e.target.closest("[data-trange]"); if(g&&!g.contains(e.relatedTarget)) trCard=null; },true);
+const rangeToday=()=>todayRange||usualRange();
 function pick(pattern, used, l){
   const av = availEq(l);
   for(const s of PATTERNS[pattern].l){ const e=BY_SLUG[s]; if(e && av.has(e.eq) && !used.has(s)) return e; }
@@ -1653,9 +1672,13 @@ function renderQuick(){
   if(!t.length || draft.exercises.length || editingId){ qs.style.display="none"; return; }
   qs.style.display="";
   $("#quickChips").innerHTML=t.map(x=>`<button class="chip" data-start="${esc(x.id)}">${esc(x.name)} · ${tailorSession(x).min} min</button>`).join("");
-  const m=minsToday(); $("#todayTime").innerHTML=MIN_OPTS.map(v=>`<button class="chip sm ${v===m?"on":""}" data-tmin="${v}" aria-pressed="${v===m}">${v?v+" min":"No limit"}</button>`).join("");
+  const r=rangeToday(), u=usualRange(); const differs=todayRange&&(r.lo!==u.lo||r.hi!==u.hi);
+  if(trCard!==$("#todayTime")) $("#todayTime").innerHTML=rangeInputs(r,"today","Time today")+(differs?`<button class="linkbtn tr-reset" data-trreset>Back to usual (${rangeLabel(u)})</button>`:"");
 }
-$("#todayTime").addEventListener("click",e=>{ const b=e.target.closest("[data-tmin]"); if(!b) return; todayMin=+b.dataset.tmin; renderQuick(); });
+// typing in the boxes saves as you go; the card redraws once you leave both boxes
+$("#todayTime").addEventListener("change",e=>{ const box=e.target.closest("[data-trange]"); if(!box) return; todayRange=cleanRange(box.querySelector("[data-tr=lo]").value,box.querySelector("[data-tr=hi]").value); renderQuick(); });
+$("#todayTime").addEventListener("focusout",e=>{ const box=e.target.closest("[data-trange]"); if(!box||box.contains(e.relatedTarget)) return; setTimeout(renderQuick,0); });
+$("#todayTime").addEventListener("click",e=>{ if(e.target.closest("[data-trreset]")){ todayRange=null; renderQuick(); } });
 $("#quickChips").addEventListener("click",e=>{ const b=e.target.closest("[data-start]"); if(b) startTemplate(b.dataset.start); });
 
 function renderLog(){
@@ -1742,7 +1765,7 @@ $("#wNotes").oninput=e=>{draft.notes=e.target.value;saveDraftSoon();};
 $("#cancelEdit").onclick=()=>{ draft=newDraft(); editingId=null; saveDraftSoon(); renderLog(); };
 $("#clearDraft").onclick=()=>{ if(editingId){ $("#cancelEdit").click(); return; } draft=newDraft(); saveDraftSoon(); renderLog(); };
 // the session as it should run today: your equipment here, and the time you have
-function tailorSession(t){ const q=tailorEquip(t.exercises); const m=minsToday(); const f=tailorTime(q.exs,m,t.superset); return {exs:f.exs,swaps:q.swaps,dropped:q.dropped,timed:!!m&&f.changed,min:estMinutes({exercises:f.exs,superset:t.superset})}; }
+function tailorSession(t){ const q=tailorEquip(t.exercises); const r=rangeToday(); const f=tailorTime(q.exs,r.hi,t.superset,r.lo); return {exs:f.exs,swaps:q.swaps,dropped:q.dropped,timed:!!(r.lo||r.hi)&&f.changed,min:estMinutes({exercises:f.exs,superset:t.superset})}; }
 function startTemplate(id){
   const t=templates().find(x=>x.id===id); if(!t) return;
   if(draft.exercises.some(x=>x.sets.some(s=>s.r!==""))){ if(!confirmInline("Replace the workout in progress?", ()=>startTemplateGo(t))) return; }
@@ -1753,7 +1776,7 @@ function startTemplateGo(t){
   const fit=tailorSession(t);
   fit.exs.forEach(x=>addToLog(x.name,{sets:x.sets,lo:x.lo,hi:x.hi,rest:x.rest}));
   saveDraftSoon(); renderLog(); showTab("log");
-  const bits=[]; if(fit.timed) bits.push(`fitted to ${minsToday()} min`); if(fit.swaps.length) bits.push(`${fit.swaps.length} swapped for your equipment`); if(fit.dropped.length) bits.push(`${fit.dropped.length} skipped (no equipment)`);
+  const bits=[]; if(fit.timed) bits.push(`fitted for ${rangeLabel(rangeToday())}`); if(fit.swaps.length) bits.push(`${fit.swaps.length} swapped for your equipment`); if(fit.dropped.length) bits.push(`${fit.dropped.length} skipped (no equipment)`);
   toast(`${t.name} loaded · ~${fit.min} min`+(bits.length?" · "+bits.join(" · "):""));
 }
 $("#saveW").onclick=async()=>{
@@ -1793,34 +1816,42 @@ $("#timerStop").onclick=()=>{ tEnd=0; clearInterval(tInt); tInt=null; $("#timerT
 /* ================= PLAN ================= */
 /* ================= YOUR SETUP (where, equipment, time) ================= */
 function setupHTML(){
-  const av=availEq(), m=+S().minutes||0;
+  const av=availEq(), r=usualRange();
   const locs=Object.entries(LOCS).map(([k,v])=>`<button class="chip ${k===loc?"on":""}" data-sloc="${k}" aria-pressed="${k===loc}">${v.label}</button>`).join("");
   const eqs=EQ_ORDER.map(e=>e==="bw"?`<button class="chip on" disabled aria-pressed="true" title="Always included"><span aria-hidden="true">✓ </span>${EQ[e]}</button>`:`<button class="chip ${av.has(e)?"on":""}" data-seq="${e}" aria-pressed="${av.has(e)}">${av.has(e)?'<span aria-hidden="true">✓ </span>':""}${EQ[e]}</button>`).join("");
-  const mins=MIN_OPTS.map(v=>`<button class="chip ${v===m?"on":""}" data-smin="${v}" aria-pressed="${v===m}">${v?v+" min":"No limit"}</button>`).join("");
   const n=LIB.filter(x=>!x.custom&&av.has(x.eq)).length;
   return `<h3>Your setup</h3><p class="hint" style="margin:0 0 4px">Tell Jim where you train, what equipment you have and how long your workouts are. Every session is built and adjusted to fit.</p>
     <div class="setup-l">Where you train</div><div class="chips">${locs}</div>
     <div class="setup-l">Equipment you have here</div><div class="chips">${eqs}</div>
-    <div class="setup-l">Time per workout</div><div class="chips">${mins}</div>
-    <p class="hint" style="margin:10px 0 0">${n} exercises match your equipment. ${m?`New sessions are built to take about ${m} min.`:"Sessions use their full length."} You can pick a different time for a single day on the Train tab.</p>`;
+    <div class="setup-l">Time per workout</div>${rangeInputs(r,"usual","Time per workout")}<div class="hint" style="margin:4px 0 0">Type a range, like 30 to 45. Leave a box empty for no limit.</div>
+    <p class="hint" style="margin:10px 0 0">${n} exercises match your equipment. ${r.lo||r.hi?`New sessions are built to take ${rangeLabel(r)}.`:"Sessions use their full length."} You can pick a different time for a single day on the Train tab.</p>`;
 }
-function renderSetup(){ ["#setupPlan","#setupSet"].forEach(s=>{ const el=$(s); if(el) el.innerHTML=setupHTML(); }); }
+function renderSetup(){ ["#setupPlan","#setupSet"].forEach(s=>{ const el=$(s); if(el&&el!==trCard) el.innerHTML=setupHTML(); }); }
+document.addEventListener("change",e=>{
+  const box=e.target.closest('.setup-card [data-trange="usual"]'); if(!box) return;
+  if(demo){ toast("Exit Jemima's example to change your equipment and time"); return; }
+  const r=cleanRange(box.querySelector("[data-tr=lo]").value,box.querySelector("[data-tr=hi]").value);
+  saveSetup({minMinutes:r.lo,minutes:r.hi}); todayRange=null; renderSetup(); renderQuick(); if(currentTab==="plan"){ renderSplits(); renderTemplates(); }
+});
+document.addEventListener("focusout",e=>{
+  const box=e.target.closest&&e.target.closest('.setup-card [data-trange="usual"]'); if(!box||box.contains(e.relatedTarget)) return;
+  setTimeout(()=>{ renderSetup(); renderQuick(); if(!demo) toast("Time per workout: "+rangeLabel(usualRange())); },0);
+});
 function saveSetup(patch){
   settings=Object.assign({},settings,patch,{setupDone:true}); ls.set("liftlog.settings",settings);
   if(sdraft) Object.assign(sdraft,patch,{setupDone:true});
   persist({type:"settings",id:"settings",...settings,updatedAt:Date.now()}).catch(()=>{});
 }
 document.addEventListener("click",e=>{
-  const b=e.target.closest(".setup-card [data-sloc],.setup-card [data-seq],.setup-card [data-smin]"); if(!b) return;
+  const b=e.target.closest(".setup-card [data-sloc],.setup-card [data-seq]"); if(!b) return;
   if(b.dataset.sloc){ loc=b.dataset.sloc; ls.set("liftlog.loc",loc); $("#locSel").value=loc; renderSetup(); if(currentTab==="plan") renderSplits(); toast("Setup: "+LOCS[loc].label); return; }
   if(demo){ toast("Exit Jemima's example to change your equipment and time"); return; }
   if(b.dataset.seq){ const cur=[...availEq()].filter(x=>x!=="bw"); const e=b.dataset.seq; const next=cur.includes(e)?cur.filter(x=>x!==e):[...cur,e]; saveSetup({locEq:Object.assign({},S().locEq||{},{[loc]:next})}); }
-  if(b.dataset.smin!=null){ saveSetup({minutes:+b.dataset.smin}); todayMin=null; }
   renderSetup(); renderQuick(); if(currentTab==="plan"){ renderSplits(); renderTemplates(); }
 });
 function renderSplits(){
   renderSetup();
-  $("#planLocLbl").textContent=LOCS[loc].label+(+S().minutes?` · about ${S().minutes} min`:"");
+  $("#planLocLbl").textContent=LOCS[loc].label+((usualRange().lo||usualRange().hi)?` · ${rangeLabel(usualRange())}`:"");
   const cats=[...new Set(SPLITS.map(s=>s.cat))];
   $("#splitGrid").innerHTML=cats.map(c=>`<div class="split-cat" style="grid-column:1/-1">${c}</div>`+SPLITS.filter(s=>s.cat===c).map(s=>`<div class="split"><div class="k">${s.name}</div><div class="badge" style="align-self:flex-start">${s.days}</div><div class="d">${s.desc}</div><button class="btn sm primary" data-split="${s.id}">Create sessions</button></div>`).join("")).join("");
 }
@@ -1836,10 +1867,10 @@ $("#splitGrid").addEventListener("click",async e=>{
         const SS=S(); let lo= bw?8:(comp?SS.compLo:SS.isoLo), hi= bw?20:(comp?SS.compHi:SS.isoHi);
         if(lo0){ lo=lo0; hi=hi0; if(bw&&!P.p&&hi<10){ lo=Math.max(lo,6); hi=Math.max(hi,12); } }
         exs.push({name:e.name,slug:e.slug,sets,lo,hi,rest: P.p?120:(comp?SS.compRest:SS.isoRest)}); }
-      const fitted=tailorTime(exs,+S().minutes||0,false).exs;
+      const fitted=tailorTime(exs,usualRange().hi,false,usualRange().lo).exs;
       await persist({type:"template",id:uid(),name:`${d.n} · ${LOCS[loc].short}`,loc,split:s.id,superset:false,inWeek:true,freq:d.f,exercises:fitted,createdAt:Date.now(),order:order++});
     }
-    toast(`${s.name} sessions created for ${LOCS[loc].label}`+(+S().minutes?` · about ${S().minutes} min each`:""));
+    toast(`${s.name} sessions created for ${LOCS[loc].label}`+((usualRange().lo||usualRange().hi)?` · ${rangeLabel(usualRange())} each`:""));
     setTimeout(()=>$("#tplList").scrollIntoView({behavior:"smooth",block:"start"}),100);
   }catch(err){ toast("Couldn't create sessions – try again"); }
   finally{ b.disabled=false; }
@@ -2632,7 +2663,7 @@ $("#settingsBody").addEventListener("click",async e=>{
   if(b.id==="sReset"){ sdraft=JSON.parse(JSON.stringify(DEFAULTS)); renderSettings(); applyTheme(sdraft.accent); toast("Defaults restored. Tap Save to keep them"); return; }
   if(b.id==="sSave"){ readSettingsForm();
     if(demo && !DEMO_ONLY){ toast("Exit Jemima's example to save your own settings"); return; }
-    Object.assign(sdraft,{locEq:settings.locEq,minutes:settings.minutes,setupDone:settings.setupDone}); try{ await persist({type:"settings",id:"settings",...sdraft,updatedAt:Date.now()}); settings=Object.assign({},DEFAULTS,sdraft); ls.set("liftlog.settings",settings); sdraft=null; applyTheme(); toast("Settings saved"); showTab("log"); }catch(err){ if(err?.code!=="readonly") toast("Couldn't save – try again"); }
+    Object.assign(sdraft,{locEq:settings.locEq,minutes:settings.minutes,minMinutes:settings.minMinutes,setupDone:settings.setupDone}); try{ await persist({type:"settings",id:"settings",...sdraft,updatedAt:Date.now()}); settings=Object.assign({},DEFAULTS,sdraft); ls.set("liftlog.settings",settings); sdraft=null; applyTheme(); toast("Settings saved"); showTab("log"); }catch(err){ if(err?.code!=="readonly") toast("Couldn't save – try again"); }
   }
 });
 
@@ -3444,7 +3475,12 @@ Where you train, your equipment and your time, then full body, upper/lower, push
 Set up my plan →|Configurar mi plan →|Configurer mon plan →|Configurar meu plano →|मेरा प्लान सेट करें →|اضبط خطتي ←|设置我的计划 →
 Exit Jemima's example to change your equipment and time|Sal del ejemplo de Jemima para cambiar tu equipo y tiempo|Quitte l'exemple de Jemima pour changer ton matériel et ton temps|Saia do exemplo da Jemima para mudar seu equipamento e tempo|अपना सामान और समय बदलने के लिए Jemima का उदाहरण बंद करें|اخرج من مثال Jemima لتغيير معداتك ووقتك|退出 Jemima 的示例后才能更改器械和时间
 Switch to dark mode|Cambiar a modo oscuro|Passer en mode sombre|Mudar para o modo escuro|डार्क मोड पर जाएं|التبديل إلى الوضع الداكن|切换到深色模式
-Switch to light mode|Cambiar a modo claro|Passer en mode clair|Mudar para o modo claro|लाइट मोड पर जाएं|التبديل إلى الوضع الفاتح|切换到浅色模式`;
+Switch to light mode|Cambiar a modo claro|Passer en mode clair|Mudar para o modo claro|लाइट मोड पर जाएं|التبديل إلى الوضع الفاتح|切换到浅色模式
+From|De|De|De|से|من|从
+to|a|à|a|तक|إلى|到
+any|cualquiera|libre|livre|कोई भी|أي|不限
+no limit|sin límite|sans limite|sem limite|कोई सीमा नहीं|بلا حد|不限
+Type a range, like 30 to 45. Leave a box empty for no limit.|Escribe un rango, por ejemplo de 30 a 45. Deja una casilla vacía para no poner límite.|Indique une plage, par exemple de 30 à 45. Laisse une case vide pour ne pas fixer de limite.|Digite um intervalo, como de 30 a 45. Deixe um campo vazio para não ter limite.|एक रेंज लिखें, जैसे 30 से 45। बिना सीमा के लिए कोई बॉक्स खाली छोड़ें।|اكتب نطاقًا، مثل من 30 إلى 45. اترك خانة فارغة لعدم وضع حد.|输入一个范围，比如 30 到 45。留空表示不限。`;
 const I18N={}; I18N_RAW.split("\n").forEach(l=>{ const p=l.split("|"); I18N[p[0].trim()]=p.slice(1); });
 const I18N_P=[
  [/^(Good morning|Good afternoon|Good evening)([\s\S]*)$/, m=>{ const g=I18N[m[1]]; return g?g[LIX[LANG]]+m[2]:null; }],
