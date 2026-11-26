@@ -74,7 +74,7 @@
     { e: "💪", t: "Meet Jim, your personal coach", d: "Jim plans your week, tells you what weight to lift next, and keeps an eye on every muscle group." },
     { e: "📝", t: "Log a workout in seconds", d: "Start a session and Jim fills in the weights to use. A rest timer runs between sets, and every new PR gets celebrated." },
     { e: "📈", t: "See the work pay off", d: "Charts for your strength and weekly sets per muscle, plus body weight and private progress photos." },
-    { e: "🗓️", t: "Built around you", d: "Pick a split and where you train. Jim builds your sessions from 349+ exercises, with exercise info courtesy of MuscleWiki." },
+    { e: "🗓️", t: "Built around you", d: "Tell Jim where you train, what equipment you have and how much time you've got. Every session is built to fit, from 349+ exercises with info courtesy of MuscleWiki." },
     { e: "📲", t: "Add Jim to your home screen", d: "Open Jim like an app, full screen, in one tap.", a2: true }
   ];
   function showIntro(done) {
@@ -824,6 +824,7 @@ nav.tabs{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inse
 .toast{bottom:calc(86px + env(safe-area-inset-bottom))}
 .modal-bg,#bigTimer{padding-top:calc(20px + env(safe-area-inset-top));padding-bottom:calc(20px + env(safe-area-inset-bottom))}
 .modal{max-height:100%;overflow:auto}
+.setup-l{font-size:13px;font-weight:700;color:var(--text-2);margin:14px 0 6px}
 /* iPhone zooms the whole page when you tap a box with text under 16px: keep every box at 16px+ there */
 @supports (-webkit-touch-callout:none){select,input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea{font-size:max(16px,1em)}}
 /* full-screen views (rest timer, photo viewer, dialogs) have their buttons at the bottom: show messages at the top instead */
@@ -870,6 +871,7 @@ body:has(#bigTimer.on,.ph-view.on,.modal-bg.on,#jiBg,#a2Bg,#jwBg) .toast.on{tran
         <option value="home-bw">Home (no dumbbells)</option>
         <option value="home-db">Home (dumbbells)</option>
         <option value="gym">Commercial gym</option>
+        <option value="custom">My own setup</option>
       </select>
       <div class="unit-toggle" role="group" aria-label="Weight unit"><button data-unit="kg">kg</button><button data-unit="lb">lb</button></div>
       <select class="pill-sel" id="langSel" aria-label="Language" data-noi18n></select>
@@ -879,10 +881,10 @@ body:has(#bigTimer.on,.ph-view.on,.modal-bg.on,#jiBg,#a2Bg,#jwBg) .toast.on{tran
     </div>
   </header>
 
-  <div class="demo-bar" id="demoBar"><span>👀 Example mode: you're viewing <b>Eric's</b> data. Nothing you do here is saved.</span><button id="demoExit">Exit example</button></div>
+  <div class="demo-bar" id="demoBar"><span>👀 Example mode: you're viewing <b>Jemima's</b> data. Nothing you do here is saved.</span><button id="demoExit">Exit example</button></div>
   <div class="card welcome" id="welcome" style="display:none">
     <h3 style="margin-top:0">👋 Hey, I'm Jim, your personal coach</h3>
-    <p class="hint" style="margin:0 0 12px">Want a quick tour first? It walks you through the app using a sample user, Eric, who has 8 weeks of training logged. Nothing in the tour is saved to your log.</p>
+    <p class="hint" style="margin:0 0 12px">Want a quick tour first? It walks you through the app using a sample user, Jemima, who has 8 weeks of training logged. Nothing in the tour is saved to your log.</p>
     <div class="row wrap-row" style="gap:8px"><button class="btn primary" id="welcomeTour">Take the demo tutorial</button><button class="btn" id="welcomeSkip">Start my own log</button></div>
   </div>
   <!-- ============ LOG ============ -->
@@ -899,7 +901,7 @@ body:has(#bigTimer.on,.ph-view.on,.modal-bg.on,#jiBg,#a2Bg,#jwBg) .toast.on{tran
       <button class="more-card" data-go="settings"><span class="mi">⚙️</span><b>Settings</b><span>Your name, goals, set targets, rep ranges, theme, accessibility and account.</span></button>
       <button class="more-card" data-go="feedback"><span class="mi">💬</span><b>Feedback</b><span>Tell Jeremy what's working, what's broken and what you'd like Jim to do next.</span></button>
       <button class="more-card" data-jimweb="a2hs"><span class="mi">📲</span><b>Add to home screen</b><span>Put Jim on your phone's home screen so it opens full screen, like an app.</span></button>
-      <button class="more-card" data-go="tour"><span class="mi">🎬</span><b>Demo tutorial</b><span>Replay the guided tour of the app using Eric's sample data.</span></button>
+      <button class="more-card" data-go="tour"><span class="mi">🎬</span><b>Demo tutorial</b><span>Replay the guided tour of the app using Jemima's sample data.</span></button>
     </div>
     <div class="try-block" data-try></div>
   </section>
@@ -964,7 +966,10 @@ body:has(#bigTimer.on,.ph-view.on,.modal-bg.on,#jiBg,#a2Bg,#jwBg) .toast.on{tran
     <p class="sub" id="logSub">Start from one of your sessions or add exercises as you go.</p>
     <div class="card" id="quickStart" style="display:none">
       <h3>Start a session</h3>
-      <div class="chips" id="quickChips"></div>
+      <div class="hint" style="margin:0 0 6px">Time today</div>
+      <div class="chips" id="todayTime" role="group" aria-label="Time today"></div>
+      <div class="chips" id="quickChips" style="margin-top:10px"></div>
+      <p class="hint" id="quickNote" style="margin:8px 0 0">Jim fits the session to your time and swaps exercises for ones you can do with your equipment.</p>
     </div>
     <div class="card">
       <div class="row" style="align-items:flex-end">
@@ -1011,6 +1016,7 @@ body:has(#bigTimer.on,.ph-view.on,.modal-bg.on,#jiBg,#a2Bg,#jwBg) .toast.on{tran
     <h2>Plan</h2>
     <p class="sub">Pick a split for where you train, then adjust the sessions to suit you. Exercises and muscle information courtesy of <a href="https://musclewiki.com/" target="_blank" rel="noopener">MuscleWiki.com</a>.</p>
 
+    <div class="card setup-card" id="setupPlan"></div>
     <div class="card">
       <h3>Start from a split</h3>
       <div class="loc-banner"><span>Exercises are picked for:</span><b id="planLocLbl"></b></div>
@@ -1072,7 +1078,7 @@ body:has(#bigTimer.on,.ph-view.on,.modal-bg.on,#jiBg,#a2Bg,#jwBg) .toast.on{tran
     <h2>Settings</h2>
     <p class="sub">Tell Jim how you like to train. Targets, rep ranges and suggestions across the app follow these.</p>
     <div class="card" id="tourCard" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-      <div class="grow" style="min-width:200px"><b>Demo tutorial</b><div class="hint" style="margin:2px 0 0">A step-by-step tour of every tab using Eric's sample data (2 upper days, 1 lower day a week). Your own log isn't touched.</div></div>
+      <div class="grow" style="min-width:200px"><b>Demo tutorial</b><div class="hint" style="margin:2px 0 0">A step-by-step tour of every tab using Jemima's sample data (2 upper days, 1 lower day a week). Your own log isn't touched.</div></div>
       <button class="btn primary" id="tourBtn">Start tutorial</button>
     </div>
     <div class="card" id="langCard"><h3>🌐 Language</h3><p class="hint">Choose the language Jim uses. Exercise names stay in English so they match MuscleWiki.</p><div class="chips lang-chips" id="langChips" data-noi18n></div></div>
@@ -1383,7 +1389,7 @@ const GOALS={muscle:{label:"Build muscle",compLo:6,compHi:10,isoLo:10,isoHi:15,c
 const LEVELS={beginner:{label:"Beginner (under 1 year)",tLo:6,tHi:12},intermediate:{label:"Intermediate (1–3 years)",tLo:10,tHi:20},advanced:{label:"Advanced (3+ years)",tLo:12,tHi:22}};
 let settings=Object.assign({},DEFAULTS,(()=>{ try{ return JSON.parse(localStorage.getItem("liftlog.settings"))||{}; }catch(e){ return {}; } })());
 if(!(()=>{ try{ return localStorage.getItem("liftlog.purple"); }catch(e){ return 1; } })()){ if(settings.accent==="red"&&!settings.accentChosen) settings.accent="purple"; try{ localStorage.setItem("liftlog.purple","1"); localStorage.setItem("liftlog.settings",JSON.stringify(settings)); }catch(e){} }
-const S=()=> (typeof demo!=="undefined"&&demo) ? Object.assign({},DEFAULTS,{name:"Eric"}) : settings;
+const S=()=> (typeof demo!=="undefined"&&demo) ? Object.assign({},DEFAULTS,{name:"Jemima"}) : settings;
 const A11Y=()=>Object.assign({},DEFAULTS.a11y,S().a11y||{});
 const tgt=g=>{ const o=S().targets?.[g]; return {lo:+(o?.lo??S().tLo), hi:+(o?.hi??S().tHi)}; };
 const ACCENTS={red:{l:["#d1343b","#fbe6e6","#e34948","#2a78d6"],d:["#e5484d","#3a1d1f","#e66767","#3987e5"],name:"Red"},
@@ -1391,7 +1397,7 @@ const ACCENTS={red:{l:["#d1343b","#fbe6e6","#e34948","#2a78d6"],d:["#e5484d","#3
   green:{l:["#1a7f37","#e2f3e6","#0f8a4f","#6250d6"],d:["#2ea043","#173022","#3fb950","#9085e9"],name:"Green"},
   purple:{l:["#5b45d6","#ece9fb","#6250d6","#eb6834"],d:["#7e6ef0","#262145","#9085e9","#d95926"],name:"Purple"},
   orange:{l:["#c2410c","#fdeadf","#eb6834","#2a78d6"],d:["#f97316","#3a2414","#f0883e","#3987e5"],name:"Orange"}};
-const LOCS = {"home-bw":{label:"Home (no dumbbells)",short:"Home BW",eq:["bw"]},"home-db":{label:"Home (dumbbells)",short:"Home DB",eq:["bw","db"]},"gym":{label:"Commercial gym",short:"Gym",eq:EQ_ORDER.slice()}};
+const LOCS = {"home-bw":{label:"Home (no dumbbells)",short:"Home BW",eq:["bw"]},"home-db":{label:"Home (dumbbells)",short:"Home DB",eq:["bw","db"]},"gym":{label:"Commercial gym",short:"Gym",eq:EQ_ORDER.slice()},"custom":{label:"My own setup",short:"My setup",eq:["bw"]}};
 
 /* ================= UTIL ================= */
 const LB = 2.20462;
@@ -1421,7 +1427,43 @@ let libTarget = null; // "log" | "tpl" | null
 const workouts = () => items.filter(x=>x.type==="workout");
 const templates = () => items.filter(x=>x.type==="template").sort((a,b)=>(a.order??a.createdAt??0)-(b.order??b.createdAt??0));
 
-function availEq(l){ return new Set(LOCS[l||loc].eq); }
+function availEq(l){ const k=LOCS[l||loc]?(l||loc):"gym"; const own=S().locEq&&S().locEq[k]; return new Set(Array.isArray(own)?["bw",...own]:LOCS[k].eq); }
+/* ---- tailoring: equipment swaps and time fitting ---- */
+const SLUG2PAT={}; for(const p in PATTERNS) for(const s of PATTERNS[p].l) if(!SLUG2PAT[s]) SLUG2PAT[s]=p;
+const MIN_OPTS=[0,20,30,45,60,75,90];
+function minLabel(m){ return m?m+" min":"No limit"; }
+// swap any exercise that needs equipment you don't have for one that trains the same movement
+function tailorEquip(exs){
+  const av=availEq(), used=new Set(exs.map(x=>(BY_NAME[(x.name||"").toLowerCase()]||{}).slug).filter(Boolean)); const out=[], swaps=[], dropped=[];
+  for(const x of exs){
+    const lib=BY_NAME[(x.name||"").toLowerCase()];
+    if(!lib||lib.custom||av.has(lib.eq)){ out.push(x); continue; }
+    const pat=SLUG2PAT[lib.slug]; const alt=pat&&pick(pat,used);
+    if(alt){ used.add(alt.slug); const bw=alt.eq==="bw"; const y={...x,name:alt.name,slug:alt.slug}; if(bw&&!PATTERNS[pat].p&&(y.hi||0)<12){ y.lo=Math.max(y.lo||8,8); y.hi=Math.max(y.hi||15,15); } out.push(y); swaps.push([x.name,alt.name]); }
+    else dropped.push(x.name);
+  }
+  return {exs:out,swaps,dropped};
+}
+// trim (or top up) a session so it fits the minutes you have; returns a new exercise list
+function tailorTime(exs,minutes,superset){
+  let E=exs.map(x=>({...x})); if(!minutes) return {exs:E,changed:false};
+  const est=()=>estMinutes({exercises:E,superset}); const isComp=x=>{ const l=BY_NAME[(x.name||"").toLowerCase()]; const p=l&&SLUG2PAT[l.slug]; return p?!!(PATTERNS[p].c||PATTERNS[p].p):x.lo<10; };
+  const start=est(); let guard=0;
+  const setsDown=(min,compToo)=>{ while(est()>minutes&&guard++<200){ const i=E.map((x,k)=>[x,k]).filter(([x])=>x.sets>min&&(compToo||!isComp(x))).sort((a,b)=>isComp(a[0])-isComp(b[0])||b[0].sets-a[0].sets||b[1]-a[1])[0]; if(!i) break; E[i[1]].sets--; } };
+  const restTo=(c,a)=>{ if(est()>minutes) E.forEach(x=>{ x.rest=Math.min(x.rest||90,isComp(x)?c:a); }); };
+  setsDown(3,true);          // 1) nothing above 3 sets
+  restTo(120,60);            // 2) a bit less rest
+  setsDown(2,false);         // 3) accessories down to 2 sets
+  restTo(90,45);             // 4) shortest sensible rests
+  while(est()>minutes&&E.length>3&&guard++<300){ let k=-1; for(let j=E.length-1;j>=0;j--) if(!isComp(E[j])){ k=j; break; } if(k<0) break; E.splice(k,1); } // 5) drop accessories from the end
+  setsDown(2,true);          // 6) big lifts down to 2 sets
+  while(est()>minutes&&E.length>2&&guard++<400) E.pop(); // 7) last resort: fewer exercises
+  // 8) plenty of time left: add a set to the big lifts first (max 5)
+  guard=0; while(est()+8<=minutes&&guard++<12){ const i=E.map((x,k)=>[x,k]).filter(([x])=>x.sets<5).sort((a,b)=>isComp(b[0])-isComp(a[0])||a[0].sets-b[0].sets||a[1]-b[1])[0]; if(!i) break; E[i[1]].sets++; if(est()>minutes){ E[i[1]].sets--; break; } }
+  return {exs:E,changed:est()!==start};
+}
+let todayMin=null; // minutes for today's workout (null = use your usual time)
+const minsToday=()=>todayMin==null?(+S().minutes||0):todayMin;
 function pick(pattern, used, l){
   const av = availEq(l);
   for(const s of PATTERNS[pattern].l){ const e=BY_SLUG[s]; if(e && av.has(e.eq) && !used.has(s)) return e; }
@@ -1611,8 +1653,10 @@ function renderQuick(){
   const t=templates(); const qs=$("#quickStart");
   if(!t.length || draft.exercises.length || editingId){ qs.style.display="none"; return; }
   qs.style.display="";
-  $("#quickChips").innerHTML=t.map(x=>`<button class="chip" data-start="${esc(x.id)}">${esc(x.name)} · ${estMinutes(x)} min</button>`).join("");
+  $("#quickChips").innerHTML=t.map(x=>`<button class="chip" data-start="${esc(x.id)}">${esc(x.name)} · ${tailorSession(x).min} min</button>`).join("");
+  const m=minsToday(); $("#todayTime").innerHTML=MIN_OPTS.map(v=>`<button class="chip sm ${v===m?"on":""}" data-tmin="${v}" aria-pressed="${v===m}">${v?v+" min":"No limit"}</button>`).join("");
 }
+$("#todayTime").addEventListener("click",e=>{ const b=e.target.closest("[data-tmin]"); if(!b) return; todayMin=+b.dataset.tmin; renderQuick(); });
 $("#quickChips").addEventListener("click",e=>{ const b=e.target.closest("[data-start]"); if(b) startTemplate(b.dataset.start); });
 
 function renderLog(){
@@ -1698,6 +1742,8 @@ $("#wDate").oninput=e=>{draft.date=e.target.value||todayStr();saveDraftSoon();};
 $("#wNotes").oninput=e=>{draft.notes=e.target.value;saveDraftSoon();};
 $("#cancelEdit").onclick=()=>{ draft=newDraft(); editingId=null; saveDraftSoon(); renderLog(); };
 $("#clearDraft").onclick=()=>{ if(editingId){ $("#cancelEdit").click(); return; } draft=newDraft(); saveDraftSoon(); renderLog(); };
+// the session as it should run today: your equipment here, and the time you have
+function tailorSession(t){ const q=tailorEquip(t.exercises); const m=minsToday(); const f=tailorTime(q.exs,m,t.superset); return {exs:f.exs,swaps:q.swaps,dropped:q.dropped,timed:!!m&&f.changed,min:estMinutes({exercises:f.exs,superset:t.superset})}; }
 function startTemplate(id){
   const t=templates().find(x=>x.id===id); if(!t) return;
   if(draft.exercises.some(x=>x.sets.some(s=>s.r!==""))){ if(!confirmInline("Replace the workout in progress?", ()=>startTemplateGo(t))) return; }
@@ -1705,8 +1751,11 @@ function startTemplate(id){
 }
 function startTemplateGo(t){
   draft=newDraft(); editingId=null; draft.name=t.name;
-  t.exercises.forEach(x=>addToLog(x.name,{sets:x.sets,lo:x.lo,hi:x.hi,rest:x.rest}));
-  saveDraftSoon(); renderLog(); showTab("log"); toast(`${t.name} loaded · ~${estMinutes(t)} min`);
+  const fit=tailorSession(t);
+  fit.exs.forEach(x=>addToLog(x.name,{sets:x.sets,lo:x.lo,hi:x.hi,rest:x.rest}));
+  saveDraftSoon(); renderLog(); showTab("log");
+  const bits=[]; if(fit.timed) bits.push(`fitted to ${minsToday()} min`); if(fit.swaps.length) bits.push(`${fit.swaps.length} swapped for your equipment`); if(fit.dropped.length) bits.push(`${fit.dropped.length} skipped (no equipment)`);
+  toast(`${t.name} loaded · ~${fit.min} min`+(bits.length?" · "+bits.join(" · "):""));
 }
 $("#saveW").onclick=async()=>{
   const exercises=draft.exercises.map(ex=>({name:ex.name.trim(), ...(ex.lo?{lo:ex.lo,hi:ex.hi}:{}), ...(ex.rir!==undefined&&ex.rir!==null?{rir:ex.rir}:{}), sets:ex.sets.filter(s=>s.r!==""&&+s.r>0).map(s=>({w:+(s.w||0),r:+s.r}))})).filter(ex=>ex.name&&ex.sets.length);
@@ -1743,8 +1792,36 @@ $$("[data-rest]").forEach(b=>b.onclick=()=>startTimer(+b.dataset.rest));
 $("#timerStop").onclick=()=>{ tEnd=0; clearInterval(tInt); tInt=null; $("#timerT").textContent="0:00"; $("#timerT").classList.remove("done"); };
 
 /* ================= PLAN ================= */
+/* ================= YOUR SETUP (where, equipment, time) ================= */
+function setupHTML(){
+  const av=availEq(), m=+S().minutes||0;
+  const locs=Object.entries(LOCS).map(([k,v])=>`<button class="chip ${k===loc?"on":""}" data-sloc="${k}" aria-pressed="${k===loc}">${v.label}</button>`).join("");
+  const eqs=EQ_ORDER.map(e=>e==="bw"?`<button class="chip on" disabled aria-pressed="true" title="Always included"><span aria-hidden="true">✓ </span>${EQ[e]}</button>`:`<button class="chip ${av.has(e)?"on":""}" data-seq="${e}" aria-pressed="${av.has(e)}">${av.has(e)?'<span aria-hidden="true">✓ </span>':""}${EQ[e]}</button>`).join("");
+  const mins=MIN_OPTS.map(v=>`<button class="chip ${v===m?"on":""}" data-smin="${v}" aria-pressed="${v===m}">${v?v+" min":"No limit"}</button>`).join("");
+  const n=LIB.filter(x=>!x.custom&&av.has(x.eq)).length;
+  return `<h3>Your setup</h3><p class="hint" style="margin:0 0 4px">Tell Jim where you train, what equipment you have and how long your workouts are. Every session is built and adjusted to fit.</p>
+    <div class="setup-l">Where you train</div><div class="chips">${locs}</div>
+    <div class="setup-l">Equipment you have here</div><div class="chips">${eqs}</div>
+    <div class="setup-l">Time per workout</div><div class="chips">${mins}</div>
+    <p class="hint" style="margin:10px 0 0">${n} exercises match your equipment. ${m?`New sessions are built to take about ${m} min.`:"Sessions use their full length."} You can pick a different time for a single day on the Train tab.</p>`;
+}
+function renderSetup(){ ["#setupPlan","#setupSet"].forEach(s=>{ const el=$(s); if(el) el.innerHTML=setupHTML(); }); }
+function saveSetup(patch){
+  settings=Object.assign({},settings,patch,{setupDone:true}); ls.set("liftlog.settings",settings);
+  if(sdraft) Object.assign(sdraft,patch,{setupDone:true});
+  persist({type:"settings",id:"settings",...settings,updatedAt:Date.now()}).catch(()=>{});
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest(".setup-card [data-sloc],.setup-card [data-seq],.setup-card [data-smin]"); if(!b) return;
+  if(b.dataset.sloc){ loc=b.dataset.sloc; ls.set("liftlog.loc",loc); $("#locSel").value=loc; renderSetup(); if(currentTab==="plan") renderSplits(); toast("Setup: "+LOCS[loc].label); return; }
+  if(demo){ toast("Exit Jemima's example to change your equipment and time"); return; }
+  if(b.dataset.seq){ const cur=[...availEq()].filter(x=>x!=="bw"); const e=b.dataset.seq; const next=cur.includes(e)?cur.filter(x=>x!==e):[...cur,e]; saveSetup({locEq:Object.assign({},S().locEq||{},{[loc]:next})}); }
+  if(b.dataset.smin!=null){ saveSetup({minutes:+b.dataset.smin}); todayMin=null; }
+  renderSetup(); renderQuick(); if(currentTab==="plan"){ renderSplits(); renderTemplates(); }
+});
 function renderSplits(){
-  $("#planLocLbl").textContent=LOCS[loc].label+" (change it at the top)";
+  renderSetup();
+  $("#planLocLbl").textContent=LOCS[loc].label+(+S().minutes?` · about ${S().minutes} min`:"");
   const cats=[...new Set(SPLITS.map(s=>s.cat))];
   $("#splitGrid").innerHTML=cats.map(c=>`<div class="split-cat" style="grid-column:1/-1">${c}</div>`+SPLITS.filter(s=>s.cat===c).map(s=>`<div class="split"><div class="k">${s.name}</div><div class="badge" style="align-self:flex-start">${s.days}</div><div class="d">${s.desc}</div><button class="btn sm primary" data-split="${s.id}">Create sessions</button></div>`).join("")).join("");
 }
@@ -1760,9 +1837,10 @@ $("#splitGrid").addEventListener("click",async e=>{
         const SS=S(); let lo= bw?8:(comp?SS.compLo:SS.isoLo), hi= bw?20:(comp?SS.compHi:SS.isoHi);
         if(lo0){ lo=lo0; hi=hi0; if(bw&&!P.p&&hi<10){ lo=Math.max(lo,6); hi=Math.max(hi,12); } }
         exs.push({name:e.name,slug:e.slug,sets,lo,hi,rest: P.p?120:(comp?SS.compRest:SS.isoRest)}); }
-      await persist({type:"template",id:uid(),name:`${d.n} · ${LOCS[loc].short}`,loc,split:s.id,superset:false,inWeek:true,freq:d.f,exercises:exs,createdAt:Date.now(),order:order++});
+      const fitted=tailorTime(exs,+S().minutes||0,false).exs;
+      await persist({type:"template",id:uid(),name:`${d.n} · ${LOCS[loc].short}`,loc,split:s.id,superset:false,inWeek:true,freq:d.f,exercises:fitted,createdAt:Date.now(),order:order++});
     }
-    toast(`${s.name} sessions created for ${LOCS[loc].label}`);
+    toast(`${s.name} sessions created for ${LOCS[loc].label}`+(+S().minutes?` · about ${S().minutes} min each`:""));
     setTimeout(()=>$("#tplList").scrollIntoView({behavior:"smooth",block:"start"}),100);
   }catch(err){ toast("Couldn't create sessions – try again"); }
   finally{ b.disabled=false; }
@@ -2433,7 +2511,7 @@ function renderVolume(){
   const vol=Object.fromEntries(weeks.map(w=>[w,0])); workouts().forEach(w=>{ const k=weekStart(w.date); if(k in vol) vol[k]+=workoutVolume(w); });
   const s1=css("--s1"), grid=css("--line");
   const data={labels:weeks.map(w=>new Date(w+"T12:00").toLocaleDateString(undefined,{month:"short",day:"numeric"})),datasets:[{label:"Volume",data:weeks.map(w=>Math.round(toDisp(vol[w]))),backgroundColor:weeks.map(w=>!period||kIn(period,w)?s1:css("--barmute")),borderRadius:{topLeft:4,topRight:4},borderSkipped:"bottom",maxBarThickness:28}]};
-  const opts={responsive:true,maintainAspectRatio:false,onClick:(ev,els)=>{ if(els&&els.length){ const w=weeks[els[0].index]; if(pCustomMode==="pk"){ pickSel=pickSel.includes(w)?pickSel.filter(x=>x!==w):[...pickSel,w]; setPeriod(mkSet(pickSel),"pk"); } else setWeek(selWeek===w?null:w); } },onHover:(ev,els)=>{ ev.native&&ev.native.target&&(ev.native.target.style.cursor=els.length?"pointer":"default"); },plugins:{legend:{display:false},tooltip:{backgroundColor:css("--surface"),titleColor:css("--text"),bodyColor:css("--text-2"),borderColor:grid,borderWidth:1,padding:10,callbacks:{title:i=>"Week of "+i[0].label,label:c=>` ${c.parsed.y.toLocaleString()} ${unit}`}}},
+  const opts={responsive:true,maintainAspectRatio:false,onClick:(ev,els)=>{ if(els&&els.length){ const w=weeks[els[0].index]; setTimeout(()=>{ if(pCustomMode==="pk"){ pickSel=pickSel.includes(w)?pickSel.filter(x=>x!==w):[...pickSel,w]; setPeriod(mkSet(pickSel),"pk"); } else setWeek(selWeek===w?null:w); },0); } },onHover:(ev,els)=>{ ev.native&&ev.native.target&&(ev.native.target.style.cursor=els.length?"pointer":"default"); },plugins:{legend:{display:false},tooltip:{backgroundColor:css("--surface"),titleColor:css("--text"),bodyColor:css("--text-2"),borderColor:grid,borderWidth:1,padding:10,callbacks:{title:i=>"Week of "+i[0].label,label:c=>` ${c.parsed.y.toLocaleString()} ${unit}`}}},
     scales:{x:{grid:{display:false},border:{color:grid},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:6}},y:{beginAtZero:true,grid:{color:grid},border:{display:false},ticks:{maxTicksLimit:5,callback:v=>v>=1000?(v/1000)+"k":v}}}};
   if(volChart) volChart.destroy(); if(window.Chart) volChart=new Chart($("#volChart"),{type:"bar",data,options:opts});
 
@@ -2461,8 +2539,9 @@ function renderSettings(){
   const tog=(k,t,desc)=>`<label class="a11y-row"><span><span class="t">${t}</span><div class="d">${desc}</div></span><input type="checkbox" data-a11y="${k}" ${a[k]?"checked":""}></label>`;
   const signed = meInfo && meInfo.id;
   $("#settingsBody").innerHTML=`
+  <div class="card setup-card" id="setupSet">${setupHTML()}</div>
   <div class="card"><h3>Account</h3>
-    ${demo ? `<div class="acct"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%235b45d6'/%3E%3Ctext x='20' y='26' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'%3EE%3C/text%3E%3C/svg%3E"><div><div class="an">Eric (example user)</div><div class="ae">Sample data · nothing is saved</div></div></div>`
+    ${demo ? `<div class="acct"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%235b45d6'/%3E%3Ctext x='20' y='26' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'%3EJ%3C/text%3E%3C/svg%3E"><div><div class="an">Jemima (example user)</div><div class="ae">Sample data · nothing is saved</div></div></div>`
     : signed ? `<div class="acct"><img alt="" src="${meInfo.avatarUrl}"><div><div class="an" id="acctName"></div><div class="ae" id="acctEmail"></div><div class="ae" style="color:var(--good);font-weight:600;margin-top:2px">✓ Signed in · ${mode==="cloud"?"workouts synced to your account":cloudBlocked?"saving on this device":"connecting…"}</div></div></div>
       ${window.JIM_WEB?`<p class="hint" style="margin-top:10px">Signed in${window.JIM_WEB.provider()==="google"?" with Google":" with your email"}. Your workouts, sessions, settings, weights and photos saved to your account sync on every device, and only you can see them.</p>
         <div class="row wrap-row" style="gap:8px;margin-top:10px"><button class="btn sm" data-jimweb="signout">Sign out</button><button class="btn sm ghost" data-jimweb="delete" style="color:var(--danger)">Delete my Jim data</button></div>`:
@@ -2553,15 +2632,15 @@ $("#settingsBody").addEventListener("click",async e=>{
   if(b.dataset.u){ unit=b.dataset.u; ls.set("liftlog.unit",unit); renderUnit(); readSettingsForm(); renderSettings(); return; }
   if(b.id==="sReset"){ sdraft=JSON.parse(JSON.stringify(DEFAULTS)); renderSettings(); applyTheme(sdraft.accent); toast("Defaults restored. Tap Save to keep them"); return; }
   if(b.id==="sSave"){ readSettingsForm();
-    if(demo && !DEMO_ONLY){ toast("Exit Eric's example to save your own settings"); return; }
-    try{ await persist({type:"settings",id:"settings",...sdraft,updatedAt:Date.now()}); settings=Object.assign({},DEFAULTS,sdraft); ls.set("liftlog.settings",settings); sdraft=null; applyTheme(); toast("Settings saved"); showTab("log"); }catch(err){ if(err?.code!=="readonly") toast("Couldn't save – try again"); }
+    if(demo && !DEMO_ONLY){ toast("Exit Jemima's example to save your own settings"); return; }
+    Object.assign(sdraft,{locEq:settings.locEq,minutes:settings.minutes,setupDone:settings.setupDone}); try{ await persist({type:"settings",id:"settings",...sdraft,updatedAt:Date.now()}); settings=Object.assign({},DEFAULTS,sdraft); ls.set("liftlog.settings",settings); sdraft=null; applyTheme(); toast("Settings saved"); showTab("log"); }catch(err){ if(err?.code!=="readonly") toast("Couldn't save – try again"); }
   }
 });
 
 function syncSettingsFromItems(){ const doc=items.find(x=>x.type==="settings"); if(doc && !demo){ const {type,id,updatedAt,...rest}=doc; settings=Object.assign({},DEFAULTS,rest); if(settings.accent==="red"&&!settings.accentChosen) settings.accent="purple"; ls.set("liftlog.settings",settings); } }
 
 /* ================= EXAMPLE USER: ERIC ================= */
-function genEric(){
+function genJemima(){
   let seed=8675309; const rnd=()=>{ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
   const pickOne=a=>a[Math.floor(rnd()*a.length)];
   const D={
@@ -2569,7 +2648,7 @@ function genEric(){
     "Lower":[["Barbell Squat",185,6,10],["Barbell Romanian Deadlift",155,6,10],["Dumbbell Bulgarian Split Squat",35,6,10],["Seated Leg Curl",90,10,15],["Machine Standing Calf Raises",140,10,15],["Cable Rope Kneeling Crunch",60,10,15]],
     "Upper B":[["Dumbbell Incline Bench Press",50,6,10],["Machine Seated Cable Row",120,6,10],["Barbell Overhead Press",85,6,10],["Pull Ups",0,6,12],["Cable Rope Face Pulls",35,10,15],["Dumbbell Hammer Curl",25,10,15],["Cable Rope Overhead Tricep Extension",35,10,15]]
   };
-  // each week has a different feel: how many sets he does and whether he pushes the weight
+  // each week has a different feel: how many sets she does and whether she pushes the weight
   const WEEKS=[
     {sets:3,push:0.5, note:"First week back, keeping it simple"},
     {sets:3,push:0.6},
@@ -2631,11 +2710,11 @@ function genEric(){
 let preDemo=null;
 let autoDemo=false;
 const TOUR=[
-  {tab:"log",t:"Log a workout",d:"Meet Eric, a sample user who trains 2 upper days and 1 lower day a week. Start a session and Jim fills in the weights to use. A rest timer runs between sets.",el:null},
-  {tab:"plan",t:"Plan",d:"Eric's sessions: 2 upper days and 1 lower day. The bars show his planned weekly sets per muscle against the target range.",el:"#planVol"},
+  {tab:"log",t:"Log a workout",d:"Meet Jemima, a sample user who trains 2 upper days and 1 lower day a week. Start a session and Jim fills in the weights to use. A rest timer runs between sets.",el:null},
+  {tab:"plan",t:"Plan",d:"Jemima's sessions: 2 upper days and 1 lower day. The bars show her planned weekly sets per muscle against the target range.",el:"#planVol"},
   {tab:"library",t:"Exercise library",d:"Filter by several muscles, equipment, type and level at once. Each exercise shows its main muscles and the exact regions it hits, with information courtesy of MuscleWiki.com.",el:"#muscleChips"},
   {tab:"home",t:"Meet Jim",d:"Your home screen. Jim tells you where you are in the week, lines up today's session with the weights to use, and leaves notes on what to change.",el:"#homeBody .today"},
-  {tab:"progress",view:"history",t:"History",d:"Every workout Eric logged, as a table: sets, weight, reps per set, reps in reserve, and the change since last time.",el:"#progHistory"},
+  {tab:"progress",view:"history",t:"History",d:"Every workout Jemima logged, as a table: sets, weight, reps per set, reps in reserve, and the change since last time.",el:"#progHistory"},
   {tab:"progress",view:"charts",t:"Pick any period",d:"Use this menu to look at the last 2, 5 or any number of weeks, a start-to-end range, or mix & match single weeks grouped by month and year.",el:".week-nav"},
   {tab:"progress",view:"charts",t:"Jim's notes",d:"Jim tells you what to do next session for each exercise: go heavier, add reps, or drop the weight. Weights are rounded to 5s and take reps till failure into account.",el:"#coachToggle"},
   {tab:"progress",view:"charts",t:"Charts",d:"Weekly volume, plus strength over time for any exercise or muscle group. Tap a bar to jump to that week.",el:"#volChart"},
@@ -2655,11 +2734,11 @@ window.addEventListener("resize",setNavH);
 function demoBanner(){
   if(DEMO_ONLY) return;
   if(autoDemo){ const st=TOUR[tourStep], last=tourStep===TOUR.length-1;
-    $("#demoBar span").innerHTML=`<div class="tour"><div class="tour-step">DEMO TUTORIAL · STEP ${tourStep+1} OF ${TOUR.length} · Eric's sample data</div><div class="tour-t">${st.t}</div><div class="tour-d">${st.d}</div>
+    $("#demoBar span").innerHTML=`<div class="tour"><div class="tour-step">DEMO TUTORIAL · STEP ${tourStep+1} OF ${TOUR.length} · Jemima's sample data</div><div class="tour-t">${st.t}</div><div class="tour-d">${st.d}</div>
       <div class="tour-nav">${tourStep?`<button class="tour-back" data-tour="-1">← Back</button>`:""}<button data-tour="${last?"done":"1"}">${last?"Start my own log →":"Next →"}</button><div class="tour-dots">${TOUR.map((_,k)=>`<i class="${k===tourStep?"on":""}"></i>`).join("")}</div></div></div>`;
     $("#demoExit").textContent="Skip tour"; $("#demoBar").classList.add("touring"); document.documentElement.classList.add("touring"); setNavH(); return; }
   $("#demoBar").classList.remove("touring"); document.documentElement.classList.remove("touring");
-  $("#demoBar span").innerHTML = "👀 Example mode: you're viewing <b>Eric's</b> data. Nothing you do here is saved.";
+  $("#demoBar span").innerHTML = "👀 Example mode: you're viewing <b>Jemima's</b> data. Nothing you do here is saved.";
   $("#demoExit").textContent = "Exit example";
 }
 $("#demoBar").addEventListener("click",e=>{ const b=e.target.closest("[data-tour]"); if(!b) return; const v=b.dataset.tour; if(v==="done") exitDemo(); else tourGo(tourStep+(+v)); });
@@ -2667,11 +2746,11 @@ function startTour(){ $("#welcome").style.display="none"; ls.set("liftlog.seenDe
 function enterDemo(){
   if(demo) return;
   preDemo={unit,draft,editingId,items}; demo=true;
-  items=genEric(); unit="lb"; ls.set("liftlog.unit",unit);
+  items=genJemima(); unit="lb"; ls.set("liftlog.unit",unit);
   draft=newDraft(); editingId=null;
   $("#demoBar").classList.add("on"); $("#welcome").style.display="none";
   rebuildLib(items); renderUnit(); progView="history"; $$("#progSeg button").forEach(x=>x.classList.toggle("on",x.dataset.p==="history")); $("#progCharts").style.display="none"; $("#progHistory").style.display="";
-  applyTheme(); demoBanner(); showTab("progress"); syncExampleBtn(); if(!autoDemo) toast("Showing Eric's example data");
+  applyTheme(); demoBanner(); showTab("progress"); syncExampleBtn(); if(!autoDemo) toast("Showing Jemima's example data");
 }
 function exitDemo(){
   if(!demo) return; demo=false; const wasAuto=autoDemo; autoDemo=false; ls.set("liftlog.seenDemo",true);
@@ -2684,8 +2763,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest("[data-go]"); if
 $("#demoExit").onclick=exitDemo; $("#tourBtn").onclick=startTour; $("#welcomeTour").onclick=startTour;
 $("#welcomeSkip").onclick=()=>{ ls.set("liftlog.seenDemo",true); $("#welcome").style.display="none"; showTab("plan"); toast("Pick a split to get started"); };
 $("#exampleBtn").onclick=()=>{ demo?exitDemo():enterDemo(); };
-function syncExampleBtn(){ $("#exampleBtn").style.display = demo && !DEMO_ONLY ? "" : "none"; $("#exampleBtn").textContent = autoDemo ? "✕ Exit tour" : "✕ Exit example"; try{ if(demo){ if(location.hash!=="#eric") history.replaceState(null,"","#eric"); } else if(location.hash==="#eric") history.replaceState(null,"",location.pathname+location.search); }catch(e){} }
-window.addEventListener("hashchange",()=>{ if(location.hash==="#eric") enterDemo(); else if(demo) exitDemo(); });
+function syncExampleBtn(){ $("#exampleBtn").style.display = demo && !DEMO_ONLY ? "" : "none"; $("#exampleBtn").textContent = autoDemo ? "✕ Exit tour" : "✕ Exit example"; try{ if(demo){ if(location.hash!=="#jemima") history.replaceState(null,"","#jemima"); } else if(location.hash==="#jemima"||location.hash==="#eric") history.replaceState(null,"",location.pathname+location.search); }catch(e){} }
+window.addEventListener("hashchange",()=>{ if(location.hash==="#jemima"||location.hash==="#eric") enterDemo(); else if(demo) exitDemo(); });
 
 /* ================= THEME ================= */
 let theme=ls.get("liftlog.theme",null); if(theme!=="light"&&theme!=="dark"){ theme=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"; }
@@ -2719,14 +2798,14 @@ function nextSession(){
 }
 function renderHome(){
   const el=$("#homeBody"); const h=new Date().getHours();
-  const nm=S().name||(!demo&&meInfo?.name?meInfo.name.split(" ")[0]:"")||(demo?"Eric":"");
+  const nm=S().name||(!demo&&meInfo?.name?meInfo.name.split(" ")[0]:"")||(demo?"Jemima":"");
   const hi=(h<12?"Good morning":h<18?"Good afternoon":"Good evening")+(nm?", "+esc(nm):"");
   const W=workouts(); const ns=nextSession();
   if(!W.length && !ns.tps.length){
     el.innerHTML=`<div class="jim-hero">${'<img class="jim-av logo-d" src="data:image/webp;base64,UklGRtILAABXRUJQVlA4IMYLAADQNwCdASqgAKAAPj0ejESiIaETCozIIAPEpu4XVRAngPvf5JezbZP6d+GOIoMl2jfff5F+M3wf/tPtA/NX+A9wD9DP83/RfVm/UD3+/yv0D/xD+h/5n+xe9R6CvQA/ov9Y6yj0AP2x9V3/jfuN8FH7Pf+L/UfAf+v3/azjzsP/yf47dfF5M9eeVbEm6//wP5CfmT8d/4XwJ+GmoF+GfyX+6/lt+UvJb6B+2HqBewf0H/S/mH/hPRP/ivyA92vlw9wD9V/8f+Xf9G52igB/Jf59/v/8H+SHx1/6f+g8+P0F/2P8F/jPkN/k39X/2P7C/+PvQ/tl7Kn6sEiX5UMUOFjanJ79ASmQOyHCDAwFodHTo0gL/vrixh/+vIQYxnKWJbJvpUd9Ncw/3VoqtofpKbfXu/KDpNK66wv+AaE++BWQtCAeyJailfuP84vYeQ7Zi/Fx4gKJlvJNtEs1H211KB+RL+KefHeihlZUITTPrV8G5X0tqb7Q+NWqzpltmGcHwsMnOWui71qwm9F3BqxnwCSZfhBOme8JBMsg/755VglMYa9vwvwxD5jGKvb7TWklgew7BC+eg8YM4ma3O1DhY2pye/QEpkCgAAD+/+C2QAAsf5D8Gb1enEE9FbvEZJr8UChS7s62Z76AjyCQMVDLWYFiM7JlQrNCCk1WRu6UoIs4vOxAth/4euBTF+DDu+OD+9K7HNLBvEg9uY0AsMGX3cYloUGOo2buVMVF9DHGzstUkaiTzFMLhrOCa0Y/t6i/2klPe1947MwzGnBMR6czrZHXbTe1UtSNhJfQ6XCYmEr9ZLbvGKKfb2bm7QtUIrGq1nRlOvA9ysAnPXQxtl6pLLXW4PgzHxI7W/MGqCrG0FyRV6/7Uazz371LE6CyPcljn31cpLv8Fz16lwPMu4pUKCTuk+NMxpiTepbu6iAOmRU632DsP/Pe8kAYXPSVtYMNW2I1ltd8sc2df+agvbfZSX6watXWi6MNWA5OA1wy6fKQRbMUoJqkiIM3Z4XC915hQUHwMqkqdDpeF2nsHAGuWQ3qcGb5zaNq1WXa2ldg6jzLd2QQ3fTPXmtXJ+7sCjCLkAfCWR6UPt7/HaIK/WQep4srtoMK5U1FLyPG5penkquEJ3oMNsSzm2va4hEyv6ZFxI5cX/TJCzyH1/yvB6ijG/llD/3Y+wPGMTlCJPQIfkq1SiLLJ426+QFMWFSoM6nlmLH90UTPr+cT7koBnMqsX8UqrFxQLifvu0XOYcX/4Ical+OU/zP14nk15HrsDXe/49knlPA7XcNNsWaLlvVTrczAPYct0TXlT8lJdmV2RCVkKnJHklX41LMgYL2WGW/qESin1x06pecbbD5gqDP2WdFBbOdiMfxV/AQRkk8o/CSl+wkCLj/hUtvzugtnm5W8LBpJ1VYDRCLa4ZewTCeAywG9DWUfne9FWSj/1b1jhUYRemQ4xfGol+/aPF46nMWW16+mq0eeUdNozGb4YxTqQDuO58W7PilWgccqJlGKeGSZiQcHYshksG003+FG5H85CJZ5bPyYbuRolL4dKFzjlG80abX+Veg/GfRv/7RcRlA5rW7R2iCUXPA8snnzWIMZ2SC8++AVtsVKeQS1AZuh+ugypK0wp+ebFc0KaFyiPbUEk8G50X2EY11mZaOI0kuRiIpY1f3y2erjzCAWXYsUiKYMDFReg6X8uFSSWVOEXrb08POeE6YjBU7YTg3ppg3LePXeImqXoeSBhYiCkNBIzFuHginQmb9/rQShMQVPzhoDblGn29Td+d4jcGSC1YGWX2SiLyYTymIUSy8Mq0N8ZW3vmLAaXOXnP4xNZYcGsgZWcbM3VNfGxKUgqCys9g1Mfjg9GzIpC6QXXyRU+Sg1QAEjBR2xuBT0HQDYTJCqd5vVLTQ3HHSZn8ajSppA/mZVHQsY9g9titpunDhYxNa4DwTlmUS4s6xDFoQii4n9/F2QsuYdJ7+a1bGHW93CW2pg7l2GiN/59o0UOu58laPX9Hnc7rW/P+0H223JF+oMUm93w0OR+oxLOPu/NoC5vldXQTDAk2jhfaxwy//69H35Fj7l9tE4Y3ntqMLJY4g5jI3lYrM1AeUwL+oQMrOImBkwg/x9ShWnC8eH737XILoFvEdg/u7o/MCgeBXwKGqc7v/89/DRHAtSECvcT/rpQDrLMCtjLWWCPCtFmlJXFIKdieDISKljzLC0YBYYLhrQHfXS+tYP3befr+rA0W/ahPiz/2+WnnXfliXvwjJEuK3U/74pE77D9Xqsb/pbg7Wlw+BkEe91hJEWxeRnkZ7wUgVFB6jIM6dGvKUJPb4aP5C5u4t+/DQYI/NtNoJPMuNIwmcF2ViJz3tMK/WF2elrpU8PISa3gPOdLbRl+u5V763t8DrteLkJSnOnK8Ew64Qzwcst5h/olUsX0cNSg58vlgLyYtR+pElW7zrygjYal3fqMenLXjbe5U9VY3ZWu3zLHqVa4Bq+/YXGi5jWg+ad7B5LLvFBY0Wiv/q/V1FOmnboUMgsvz/bqs2EemAH6lQal1596SxsM5x8SL+0jhhP+fGJ2WNXgfGVg+wjZUZeKLdS91+pXGJk0xpGI6W/VApYE92a1+YS9fGjYzuY3Z9pP4CTnPW/rd0vrqit35DiXViyHhguf83V98Bmq0geMOqFTdHJs1b9p2Y96YC7alv98tVVIO0iuqQJiHDYicRx94sy95Pws/L5KTP+7yQ5mBf4G+bPw1evLeZxM5uPjx7NoLYXjbNnMgt5/eUVtA96gkomeGa68kKZoeoX7EsFgsW3nsYD40YSOrAiEftlgFTElEcKYJaJ31ZFc82Z/dWrKhZkz2SV68YjTnOsC4GA/uCibRobaZ7moLh4XE+AJlXUjMe8i4co8CgCST7dkEJQeesk66wJ2pyxx7JS3fhA25g3fLaGuGl7Rz8Hk21VGOLV403FbhPi4GW+SNrvjkESDbI0mzllufXEEMMVazIOOYSL1Iv5MLd/g02EKoxDwMx5cgYDDtw9NQ1r0sxM9eKXZ8oi/x5n00kjWCSzBLE6v1G816Ly3vNW779Oxrb/1tvDx51F5ULs6eK6VUqOJkAw9vyaZayXGENFgAMrM4Q+tE498mnu0X+qyjeMSheaE6eA8eQPK1UI68EJY3YyqYdKdIf/9TZkw/5L5CGfMIHJNto78LVmNtOHUpTgrAiMZG6JrqdAhuAAT9NklqASbBY/nWKUQUGck7jPB+AGSQg6XzdVYPUTwNgSdQPCFk40O91j68OVcejHzwzBsTbs8Yx2bOUopAQclsBfV9tf8h0YDfzsvlibOHcXzVrlDRUrGaAhKWte7FmO57cgO465vyW0RM9zRRQcLo+F2sjyUHDoN16ccqNalFArJyFkQv/V6KOH4Z8cU/8HHSEtQE88I7o8+19ueJTH6yndWyQxZisM5WwO7C04OxpjB7P1dI5AJGSuGSOKcPWoqHD2UQ7BPzqbbVHy/MbcSDhUxAMbTPlFe4dG8GE0KK8ANr2I49c4C3TlN8m2OgytwMM3LgxJWqrGWywuq+ZZXsFBm/Y1f4b5Pu11A0sRXrPP7t3wD1n/jeLGPWJqkzgCvS/DIXCzy8wbslJLfHsm7UPsA8gVnu7wUwG4h1LBCCDe1MihjBvk1iHjk1zdWHn0/OWLwICP2C5Zb4p/DPx7P2F8P1YmNU/wKZDY4J129kzGZ5GHEDN7oVio7Hl4cFV113tfwj7w91CqFNeyMcOOmDcEhr5tDpp56ImCzroS+ll1nbZpyBkopKVSgKWn2zYFo+DD7QNEE+exJ7/rq/R7Ij4yS7mGmU+O7RmZXHSns1Paq4VwDhY0V1SpV0/s54UR8ydmcxrlJbYYWuzVyPqB+jczjTsj1M2mo4V6WSrQoQwWp7E6ZRv2n9rrcAcxF+nam0+3PTeWe5utL5AG/mFCS9riRedJessqORqhOpL/3r8Ds//zPzvzFJLEtJEs7hKqKvkiA1QEYXEWmlgoXCL02ux7Ifd3y4DZ+MWbADB9gAAAAAAAAA==" alt="Jim"><img class="jim-av logo-l" src="data:image/webp;base64,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" alt="Jim">'}<div class="msgs"><div class="jim-hello">${hi} 👋</div>
       <div class="bubble">I'm <b>Jim</b>, your personal coach. I'll plan your week, tell you what weight to lift next time, and keep an eye on every muscle group.</div>
-      <div class="bubble">Let's start: tell me where you train (top of the screen), then pick a split and I'll build your sessions.</div></div></div>
-      <div class="home-grid"><div class="card today span2"><div class="eyebrow">Step 1</div><h3>Pick your split</h3><div class="meta">Full body, upper/lower, push/pull/legs, bro split, sports and more.</div><button class="btn primary" data-go="plan">Choose a split →</button></div>
+      <div class="bubble">Let's start: tell me where you train, what equipment you have and how long your workouts are. Then pick a split and I'll build sessions that fit.</div></div></div>
+      <div class="home-grid"><div class="card today span2"><div class="eyebrow">Step 1</div><h3>Set up and pick your split</h3><div class="meta">Where you train, your equipment and your time, then full body, upper/lower, push/pull/legs, sports and more.</div><button class="btn primary" data-go="plan">Set up my plan →</button></div>
       
       <div class="card hc span2"><div class="eyebrow">Just want to lift?</div><b>Log a workout now</b><p class="hint" style="margin:4px 0 10px">Add exercises as you go. Jim learns from every set.</p><button class="btn" data-go="log">Start training</button></div></div>`;
     return; }
@@ -2754,7 +2833,7 @@ function renderHome(){
   // today card
   let today="";
   if(ns.next){ const t=ns.next;
-    today=`<div class="card today"><div class="eyebrow">Today's session</div><h3>${esc(t.name.split(" · ")[0])}</h3><div class="meta">${t.exercises.length} exercises · ${t.exercises.reduce((a,x)=>a+x.sets,0)} sets · about ${estMinutes(t)} min</div>
+    today=`<div class="card today"><div class="eyebrow">Today's session</div><h3>${esc(t.name.split(" · ")[0])}</h3>${(f=>`<div class="meta">${f.exs.length} exercises · ${f.exs.reduce((a,x)=>a+x.sets,0)} sets · about ${f.min} min${f.swaps.length?` · ${f.swaps.length} swapped for your equipment`:""}</div>`)(tailorSession(t))}
       <div class="week-dots" title="${ns.done} of ${ns.total} this week">${Array.from({length:ns.total},(_,k)=>`<i class="${k<ns.done?"on":""}"></i>`).join("")}</div>
       <ul style="margin-top:10px">${t.exercises.slice(0,6).map(x=>{ const c=cmap.get(x.name.toLowerCase()); const ss=sessionsFor(x.name); const lw2=ss.length?ss[ss.length-1]:null;
         const w=c&&c.w?fmt5(c.w)+" "+unit:lw2&&lw2.top?fmtW(lw2.top)+" "+unit:"";
@@ -2820,7 +2899,7 @@ $("#bwRange").onclick=e=>{ const b=e.target.closest("[data-r]"); if(!b) return; 
 $("#bwGoalSave").onclick=()=>{ const v=parseFloat($("#bwGoal").value); ls.set("liftlog.bwGoal", v>0?fromDisp(v):null); toast(v>0?"Goal set":"Goal cleared"); renderBW(); };
 $("#bwList").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return;
   if(b.dataset.bwedit){ const x=items.find(i=>i.id===b.dataset.bwedit); bwEdit=x.id; $("#bwVal").value=Math.round(toDisp(x.kg)*10)/10; $("#bwDate").value=x.date; $("#bwNote").value=x.note||""; renderBW(); window.scrollTo({top:0,behavior:"smooth"}); }
-  if(b.dataset.bwdel){ if(demo){ toast("This is Eric's example"); return; } confirmBox("Delete this weigh-in?","This can't be undone.",()=>removeItem(b.dataset.bwdel)); } });
+  if(b.dataset.bwdel){ if(demo){ toast("This is Jemima's example"); return; } confirmBox("Delete this weigh-in?","This can't be undone.",()=>removeItem(b.dataset.bwdel)); } });
 
 /* ================= PROGRESS PHOTOS ================= */
 const photoItems=()=>items.filter(x=>x.type==="photo").sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
@@ -2844,7 +2923,7 @@ async function renderPhotos(){
   $("#phCompareBar").style.display=phCompare?"":"none";
   if(phCompare) $("#phCompareBar").innerHTML=`<b>Pick two photos</b> to see them side by side. <span class="hint">${phCompare.length}/2 picked</span>`;
   const F=P.filter(p=>phFilter==="all"||p.pose===phFilter);
-  if(!F.length){ $("#phGrid").innerHTML=`<div class="card empty"><b>${demo?"Eric's photos are private":"No photos yet"}</b>${demo?"Progress photos aren't part of the example. Exit it to add your own.":"Take a front, side and back photo in the same spot and lighting every few weeks. Changes are much easier to see that way than in the mirror."}</div>`; return; }
+  if(!F.length){ $("#phGrid").innerHTML=`<div class="card empty"><b>${demo?"Jemima's photos are private":"No photos yet"}</b>${demo?"Progress photos aren't part of the example. Exit it to add your own.":"Take a front, side and back photo in the same spot and lighting every few weeks. Changes are much easier to see that way than in the mirror."}</div>`; return; }
   const by={}; F.forEach(p=>{ const m=p.date.slice(0,7); (by[m]=by[m]||[]).push(p); });
   $("#phGrid").innerHTML=Object.keys(by).sort().reverse().map(m=>`<div class="ph-month">${new Date(m+"-15T12:00").toLocaleDateString(undefined,{month:"long",year:"numeric"})} · ${by[m].length}</div><div class="ph-grid">${by[m].map(p=>{ const k=phCompare?phCompare.indexOf(p.id):-1;
     return `<button class="ph ${k>=0?"sel":""}" data-ph="${p.id}"><span class="miss">Loading…</span><span class="cap">${new Date(p.date+"T12:00").toLocaleDateString(undefined,{month:"short",day:"numeric"})} · ${POSES[p.pose]||""}</span>${k>=0?`<span class="num">${k+1}</span>`:""}</button>`; }).join("")}</div>`).join("");
@@ -2969,7 +3048,7 @@ $$("nav.tabs button[data-tab]").forEach(b=>b.onclick=()=>{ if(currentTab==="sett
 function renderUnit(){ $$(".unit-toggle button").forEach(b=>b.classList.toggle("on",b.dataset.unit===unit)); }
 $$(".unit-toggle button").forEach(b=>b.onclick=()=>{ unit=b.dataset.unit; ls.set("liftlog.unit",unit); renderUnit(); showTab(currentTab); });
 $("#locSel").value=loc;
-$("#locSel").onchange=e=>{ loc=e.target.value; ls.set("liftlog.loc",loc); toast("Setup: "+LOCS[loc].label); showTab(currentTab); };
+$("#locSel").onchange=e=>{ loc=e.target.value; ls.set("liftlog.loc",loc); toast("Setup: "+LOCS[loc].label); showTab(currentTab); renderSetup(); };
 function renderDatalists(){
   const names=[...new Set([...allExerciseNames(),...LIB.map(x=>x.name)])];
   $("#exNames").innerHTML=names.map(n=>`<option value="${esc(n)}">`).join("");
@@ -3035,7 +3114,7 @@ Log your weight and see the trend, with a 7-day average that smooths out daily u
 349+ exercises from MuscleWiki.com with the exact muscles each one hits. Filter by muscle, equipment, type and level.|Más de 349 ejercicios de MuscleWiki.com con los músculos exactos que trabaja cada uno. Filtra por músculo, equipo, tipo y nivel.|Plus de 349 exercices de MuscleWiki.com avec les muscles précis travaillés. Filtre par muscle, équipement, type et niveau.|Mais de 349 exercícios do MuscleWiki.com com os músculos exatos de cada um. Filtre por músculo, equipamento, tipo e nível.|MuscleWiki.com की 349+ एक्सरसाइज़, हर एक से काम करने वाली सटीक मांसपेशियों के साथ। मांसपेशी, उपकरण, प्रकार और लेवल से फ़िल्टर करें।|أكثر من 349 تمرينًا من MuscleWiki.com مع العضلات التي يستهدفها كل تمرين. صفِّ حسب العضلة والمعدات والنوع والمستوى.|来自 MuscleWiki.com 的 349+ 个动作，标明每个动作锻炼的具体肌肉。可按肌肉、器械、类型和难度筛选。
 Splits, sets per week, progressive overload, rest times, plyometrics and smart shopping.|Rutinas, series por semana, sobrecarga progresiva, descansos, pliometría y compras inteligentes.|Programmes, séries par semaine, surcharge progressive, temps de repos, pliométrie et achats malins.|Divisões, séries por semana, sobrecarga progressiva, descanso, pliometria e compras inteligentes.|स्प्लिट, हफ़्ते के सेट, प्रोग्रेसिव ओवरलोड, आराम का समय, प्लायोमेट्रिक्स और समझदारी से खरीदारी।|التقسيمات، والمجموعات الأسبوعية، والحمل التدريجي، وأوقات الراحة، والبليومترك، والتسوق الذكي.|训练分化、每周组数、渐进超负荷、休息时间、增强式训练和精明购物。
 Your name, goals, set targets, rep ranges, theme, accessibility and account.|Tu nombre, objetivos, series objetivo, rangos de repeticiones, idioma, accesibilidad y cuenta.|Ton prénom, objectifs, séries cibles, plages de répétitions, langue, accessibilité et compte.|Seu nome, objetivos, metas de séries, faixas de repetições, idioma, acessibilidade e conta.|आपका नाम, लक्ष्य, सेट टारगेट, रेप रेंज, भाषा, सुगम्यता और खाता।|اسمك وأهدافك وأهداف المجموعات ونطاقات التكرار واللغة وإمكانية الوصول والحساب.|你的名字、目标、组数目标、次数范围、语言、无障碍和账户。
-Replay the guided tour of the app using Eric's sample data.|Repite el recorrido guiado con los datos de ejemplo de Eric.|Rejoue la visite guidée avec les données d'exemple d'Eric.|Reveja o tour guiado com os dados de exemplo do Eric.|Eric के सैंपल डेटा के साथ ऐप का गाइडेड टूर फिर से देखें।|أعد الجولة الإرشادية باستخدام بيانات إريك التجريبية.|用 Eric 的示例数据重温应用导览。
+Replay the guided tour of the app using Jemima's sample data.|Repite el recorrido guiado con los datos de ejemplo de Jemima.|Rejoue la visite guidée avec les données d'exemple de Jemima.|Reveja o tour guiado com os dados de exemplo da Jemima.|Jemima के सैंपल डेटा के साथ ऐप का गाइडेड टूर फिर से देखें।|أعد الجولة الإرشادية باستخدام بيانات جميمة التجريبية.|用 Jemima 的示例数据重温应用导览。
 Tell Jeremy what's working, what's broken and what you'd like Jim to do next.|Cuéntale a Jeremy qué funciona, qué falla y qué te gustaría que Jim hiciera.|Dis à Jeremy ce qui marche, ce qui bloque et ce que tu aimerais que Jim fasse ensuite.|Conte ao Jeremy o que funciona, o que está quebrado e o que você gostaria que o Jim fizesse.|Jeremy को बताएं क्या ठीक चल रहा है, क्या टूटा है और आप Jim से आगे क्या चाहते हैं।|أخبر جيريمي بما يعمل وما لا يعمل وما تريد أن يفعله جيم لاحقًا.|告诉 Jeremy 哪些好用、哪些坏了，以及你希望 Jim 接下来做什么。
 Tell Jeremy what's working, what's broken and what you'd like Jim to do next. Every message gets read.|Cuéntale a Jeremy qué funciona, qué falla y qué te gustaría que Jim hiciera. Se leen todos los mensajes.|Dis à Jeremy ce qui marche, ce qui bloque et ce que tu aimerais que Jim fasse ensuite. Chaque message est lu.|Conte ao Jeremy o que funciona, o que está quebrado e o que você gostaria que o Jim fizesse. Toda mensagem é lida.|Jeremy को बताएं क्या ठीक चल रहा है, क्या टूटा है और आप Jim से आगे क्या चाहते हैं। हर संदेश पढ़ा जाता है।|أخبر جيريمي بما يعمل وما لا يعمل وما تريد أن يفعله جيم لاحقًا. تُقرأ كل رسالة.|告诉 Jeremy 哪些好用、哪些坏了，以及你希望 Jim 接下来做什么。每条消息都会被阅读。
 Log workout|Registrar entrenamiento|Noter la séance|Registrar treino|वर्कआउट लॉग करें|تسجيل تمرين|记录训练
@@ -3312,7 +3391,6 @@ Thanks! Saved on this device. Jim will send it to Jeremy as soon as it can.|¡Gr
 Choose the language Jim uses. Exercise names stay in English so they match MuscleWiki.|Elige el idioma de Jim. Los nombres de los ejercicios quedan en inglés para coincidir con MuscleWiki.|Choisis la langue de Jim. Les noms d'exercices restent en anglais pour correspondre à MuscleWiki.|Escolha o idioma do Jim. Os nomes dos exercícios ficam em inglês para combinar com o MuscleWiki.|Jim की भाषा चुनें। एक्सरसाइज़ के नाम अंग्रेज़ी में रहते हैं ताकि MuscleWiki से मेल खाएं।|اختر لغة جيم. تبقى أسماء التمارين بالإنجليزية لتطابق MuscleWiki.|选择 Jim 的语言。动作名称保留英文，以便与 MuscleWiki 对应。
 I'm|Soy|Je suis|Eu sou o|मैं|أنا|我是
 , your personal coach. I'll plan your week, tell you what weight to lift next time, and keep an eye on every muscle group.|, tu entrenador personal. Planificaré tu semana, te diré qué peso levantar la próxima vez y vigilaré cada grupo muscular.|, ton coach personnel. Je planifie ta semaine, je te dis quel poids soulever la prochaine fois et je surveille chaque groupe musculaire.|, seu treinador pessoal. Vou planejar sua semana, dizer que peso levantar na próxima vez e acompanhar cada grupo muscular.|, आपका पर्सनल कोच। मैं आपका हफ़्ता प्लान करूंगा, बताऊंगा कि अगली बार कितना वज़न उठाना है, और हर मांसपेशी समूह पर नज़र रखूंगा।|، مدربك الشخصي. سأخطط أسبوعك، وأخبرك بالوزن الذي سترفعه في المرة القادمة، وأتابع كل مجموعة عضلية.|，你的私人教练。我会安排你的一周，告诉你下次该举多重，并关注每个肌群。
-Let's start: tell me where you train (top of the screen), then pick a split and I'll build your sessions.|Empecemos: dime dónde entrenas (arriba de la pantalla), elige una rutina y armaré tus sesiones.|C'est parti : dis-moi où tu t'entraînes (en haut de l'écran), puis choisis un programme et je crée tes séances.|Vamos começar: diga onde você treina (no topo da tela), escolha uma divisão e eu monto suas sessões.|चलिए शुरू करें: बताएं आप कहां ट्रेन करते हैं (स्क्रीन के ऊपर), फिर स्प्लिट चुनें और मैं आपके सेशन बना दूंगा।|لنبدأ: أخبرني أين تتمرن (أعلى الشاشة)، ثم اختر تقسيمة وسأبني جلساتك.|开始吧：告诉我你在哪里训练（屏幕顶部），然后选择一个分化，我来为你安排训练课。
 Good morning|Buenos días|Bonjour|Bom dia|सुप्रभात|صباح الخير|早上好
 Good afternoon|Buenas tardes|Bon après-midi|Boa tarde|नमस्कार|مساء الخير|下午好
 Good evening|Buenas noches|Bonsoir|Boa noite|शुभ संध्या|مساء الخير|晚上好
@@ -3323,7 +3401,7 @@ Start a session and Jim fills in the weights to use. A rest timer runs between s
 See the work pay off|Mira cómo da frutos tu esfuerzo|Voyez vos efforts payer|Veja o esforço valer a pena|देखें मेहनत रंग लाती है|شاهد ثمار جهدك|看见努力的回报
 Charts for your strength and weekly sets per muscle, plus body weight and private progress photos.|Gráficos de tu fuerza y series semanales por músculo, además de peso corporal y fotos de progreso privadas.|Des graphiques de votre force et de vos séries hebdomadaires par muscle, plus le poids corporel et des photos de progrès privées.|Gráficos da sua força e séries semanais por músculo, além de peso corporal e fotos de progresso privadas.|आपकी ताकत और हर मसल के साप्ताहिक सेट्स के चार्ट, साथ में बॉडी वेट और निजी प्रोग्रेस फ़ोटो।|رسوم بيانية لقوتك ومجموعاتك الأسبوعية لكل عضلة، إضافة إلى وزن الجسم وصور تقدّم خاصة.|力量和每块肌肉每周组数的图表，还有体重和私密的进度照片。
 Built around you|Hecho a tu medida|Pensé pour vous|Feito para você|आपके हिसाब से बना|مصمَّم حولك|为你量身打造
-Pick a split and where you train. Jim builds your sessions from 349+ exercises, with exercise info courtesy of MuscleWiki.|Elige una rutina y dónde entrenas. Jim crea tus sesiones con más de 349 ejercicios, con información cortesía de MuscleWiki.|Choisissez un programme et votre lieu d'entraînement. Jim crée vos séances à partir de plus de 349 exercices, avec des infos fournies par MuscleWiki.|Escolha uma divisão e onde você treina. O Jim monta suas sessões com mais de 349 exercícios, com informações cortesia do MuscleWiki.|एक स्प्लिट और ट्रेनिंग की जगह चुनें। Jim 349+ एक्सरसाइज़ से आपके सेशन बनाता है, एक्सरसाइज़ जानकारी MuscleWiki के सौजन्य से।|اختر نظام تقسيم ومكان تمرينك. يبني Jim جلساتك من أكثر من 349 تمرينًا، بمعلومات مقدّمة من MuscleWiki.|选择训练分化和训练地点。Jim 会从 349+ 个动作中为你安排训练，动作信息由 MuscleWiki 提供。
+Tell Jim where you train, what equipment you have and how much time you've got. Every session is built to fit, from 349+ exercises with info courtesy of MuscleWiki.|Dile a Jim dónde entrenas, qué equipo tienes y cuánto tiempo tienes. Cada sesión se crea a tu medida, con más de 349 ejercicios e información cortesía de MuscleWiki.|Dis à Jim où tu t'entraînes, quel matériel tu as et combien de temps tu as. Chaque séance est construite sur mesure, à partir de plus de 349 exercices, infos fournies par MuscleWiki.|Diga ao Jim onde você treina, que equipamento tem e quanto tempo tem. Cada sessão é montada sob medida, com mais de 349 exercícios e informações cortesia do MuscleWiki.|Jim को बताएं कि आप कहाँ ट्रेन करते हैं, कौन-सा सामान है और कितना समय है। हर सेशन उसी हिसाब से बनता है, 349+ एक्सरसाइज़ से, जानकारी MuscleWiki के सौजन्य से।|أخبر Jim أين تتمرن وما معداتك وكم لديك من وقت. تُبنى كل جلسة لتناسبك من أكثر من 349 تمرينًا، بمعلومات مقدّمة من MuscleWiki.|告诉 Jim 你在哪训练、有什么器械、有多少时间。每次训练都据此安排，动作来自 349+ 个动作库，信息由 MuscleWiki 提供。
 Add Jim to your home screen|Añade Jim a tu pantalla de inicio|Ajoutez Jim à votre écran d'accueil|Adicione o Jim à sua tela inicial|Jim को अपनी होम स्क्रीन पर जोड़ें|أضف Jim إلى شاشتك الرئيسية|把 Jim 添加到主屏幕
 Open Jim like an app, full screen, in one tap.|Abre Jim como una app, a pantalla completa, con un toque.|Ouvrez Jim comme une appli, en plein écran, d'un seul geste.|Abra o Jim como um app, em tela cheia, com um toque.|Jim को ऐप की तरह, फ़ुल स्क्रीन, एक टैप में खोलें।|افتح Jim كتطبيق، بملء الشاشة، بلمسة واحدة.|一点即可像应用一样全屏打开 Jim。
 Open this page in Safari.|Abre esta página en Safari.|Ouvrez cette page dans Safari.|Abra esta página no Safari.|यह पेज Safari में खोलें।|افتح هذه الصفحة في Safari.|在 Safari 中打开此页面。
@@ -3351,7 +3429,21 @@ Continue as guest|Continuar como invitado|Continuer en invité|Continuar como co
 Not now|Ahora no|Pas maintenant|Agora não|अभी नहीं|ليس الآن|以后再说
 As a guest, everything stays in this browser. If you sign in later, what you've logged moves into your account. Your data is private to you and never sold.|Como invitado, todo se queda en este navegador. Si inicias sesión después, lo que registraste pasa a tu cuenta. Tus datos son privados y nunca se venden.|En invité, tout reste dans ce navigateur. Si vous vous connectez plus tard, ce que vous avez noté passe dans votre compte. Vos données restent privées et ne sont jamais vendues.|Como convidado, tudo fica neste navegador. Se entrar depois, o que você registrou vai para sua conta. Seus dados são privados e nunca vendidos.|मेहमान के रूप में सब कुछ इसी ब्राउज़र में रहता है। बाद में साइन इन करने पर आपका लॉग किया डेटा आपके खाते में चला जाता है। आपका डेटा निजी है और कभी बेचा नहीं जाता।|كضيف، يبقى كل شيء في هذا المتصفح. إذا سجّلت الدخول لاحقًا، ينتقل ما سجّلته إلى حسابك. بياناتك خاصة بك ولا تُباع أبدًا.|以访客身份使用时，所有内容都保存在此浏览器中。之后登录，你记录的内容会转入你的账户。你的数据仅你可见，绝不出售。
 Check your email and tap the link to sign in. You can close this tab.|Revisa tu correo y toca el enlace para entrar. Puedes cerrar esta pestaña.|Consultez vos e-mails et touchez le lien pour vous connecter. Vous pouvez fermer cet onglet.|Confira seu e-mail e toque no link para entrar. Você pode fechar esta aba.|अपना ईमेल देखें और साइन इन करने के लिए लिंक पर टैप करें। आप यह टैब बंद कर सकते हैं।|تحقّق من بريدك واضغط على الرابط لتسجيل الدخول. يمكنك إغلاق هذا التبويب.|请查收邮件并点按链接登录。你可以关闭此标签页。
-Enter a valid email.|Escribe un correo válido.|Saisissez un e-mail valide.|Digite um e-mail válido.|सही ईमेल डालें।|أدخل بريدًا إلكترونيًا صالحًا.|请输入有效的邮箱。`;
+Enter a valid email.|Escribe un correo válido.|Saisissez un e-mail valide.|Digite um e-mail válido.|सही ईमेल डालें।|أدخل بريدًا إلكترونيًا صالحًا.|请输入有效的邮箱。
+Your setup|Tu configuración|Ton installation|Sua configuração|आपका सेटअप|إعداداتك|你的训练条件
+Tell Jim where you train, what equipment you have and how long your workouts are. Every session is built and adjusted to fit.|Dile a Jim dónde entrenas, qué equipo tienes y cuánto duran tus entrenamientos. Cada sesión se crea y ajusta a tu medida.|Dis à Jim où tu t'entraînes, quel matériel tu as et combien de temps durent tes séances. Chaque séance est construite et ajustée en conséquence.|Diga ao Jim onde você treina, que equipamento tem e quanto tempo duram seus treinos. Cada sessão é montada e ajustada para caber.|Jim को बताएं कि आप कहाँ ट्रेन करते हैं, कौन-सा सामान है और वर्कआउट कितनी देर का होता है। हर सेशन उसी हिसाब से बनता और बदलता है।|أخبر Jim أين تتمرن، وما المعدات المتوفرة لديك، وكم تستغرق تمارينك. تُبنى كل جلسة وتُعدَّل لتناسبك.|告诉 Jim 你在哪训练、有什么器械、每次练多久。每次训练都会据此安排和调整。
+Where you train|Dónde entrenas|Où tu t'entraînes|Onde você treina|आप कहाँ ट्रेन करते हैं|أين تتمرن|训练地点
+Equipment you have here|Equipo que tienes aquí|Matériel disponible ici|Equipamento que você tem aqui|यहाँ उपलब्ध सामान|المعدات المتوفرة هنا|这里有的器械
+Time per workout|Tiempo por entrenamiento|Durée par séance|Tempo por treino|हर वर्कआउट का समय|مدة كل تمرين|每次训练时长
+No limit|Sin límite|Sans limite|Sem limite|कोई सीमा नहीं|بلا حد|不限
+Time today|Tiempo hoy|Temps aujourd'hui|Tempo hoje|आज का समय|الوقت اليوم|今天的时间
+Jim fits the session to your time and swaps exercises for ones you can do with your equipment.|Jim ajusta la sesión a tu tiempo y cambia ejercicios por otros que puedas hacer con tu equipo.|Jim adapte la séance à ton temps et remplace les exercices par ceux que tu peux faire avec ton matériel.|O Jim ajusta a sessão ao seu tempo e troca exercícios por outros que você consegue fazer com seu equipamento.|Jim सेशन को आपके समय के हिसाब से ढालता है और एक्सरसाइज़ को ऐसी एक्सरसाइज़ से बदलता है जो आपके सामान से हो सकें।|يضبط Jim الجلسة على وقتك ويستبدل التمارين بأخرى يمكنك أداؤها بمعداتك.|Jim 会按你的时间调整训练，并把动作换成你现有器械能做的。
+My own setup|Mi propia configuración|Mon installation|Minha configuração|मेरा अपना सेटअप|إعدادي الخاص|我的自定义条件
+Let's start: tell me where you train, what equipment you have and how long your workouts are. Then pick a split and I'll build sessions that fit.|Empecemos: dime dónde entrenas, qué equipo tienes y cuánto duran tus entrenamientos. Luego elige una rutina y armaré sesiones a tu medida.|C'est parti : dis-moi où tu t'entraînes, quel matériel tu as et combien de temps durent tes séances. Puis choisis un programme et je construirai des séances adaptées.|Vamos começar: me diga onde você treina, que equipamento tem e quanto tempo duram seus treinos. Depois escolha uma divisão e eu monto sessões que cabem.|चलिए शुरू करें: बताएं कि आप कहाँ ट्रेन करते हैं, कौन-सा सामान है और वर्कआउट कितनी देर का होता है। फिर एक स्प्लिट चुनें और मैं आपके हिसाब से सेशन बनाऊँगा।|لنبدأ: أخبرني أين تتمرن، وما معداتك، وكم تستغرق تمارينك. ثم اختر نظامًا وسأبني جلسات تناسبك.|我们开始吧：告诉我你在哪训练、有什么器械、每次练多久。然后选一个训练分化，我会安排合适的训练。
+Set up and pick your split|Configura y elige tu rutina|Configure et choisis ton programme|Configure e escolha sua divisão|सेटअप करें और स्प्लिट चुनें|اضبط إعداداتك واختر نظامك|设置并选择训练分化
+Where you train, your equipment and your time, then full body, upper/lower, push/pull/legs, sports and more.|Dónde entrenas, tu equipo y tu tiempo; luego cuerpo completo, torso/pierna, empuje/tirón/pierna, deportes y más.|Où tu t'entraînes, ton matériel et ton temps, puis full body, haut/bas, push/pull/legs, sport et plus.|Onde você treina, seu equipamento e seu tempo; depois corpo inteiro, superior/inferior, empurrar/puxar/pernas, esportes e mais.|आप कहाँ ट्रेन करते हैं, आपका सामान और समय, फिर फुल बॉडी, अपर/लोअर, पुश/पुल/लेग्स, स्पोर्ट्स और भी।|مكان تمرينك ومعداتك ووقتك، ثم الجسم الكامل، علوي/سفلي، دفع/سحب/أرجل، الرياضات والمزيد.|训练地点、器械和时间，然后是全身、上下肢、推/拉/腿、运动专项等。
+Set up my plan →|Configurar mi plan →|Configurer mon plan →|Configurar meu plano →|मेरा प्लान सेट करें →|اضبط خطتي ←|设置我的计划 →
+Exit Jemima's example to change your equipment and time|Sal del ejemplo de Jemima para cambiar tu equipo y tiempo|Quitte l'exemple de Jemima pour changer ton matériel et ton temps|Saia do exemplo da Jemima para mudar seu equipamento e tempo|अपना सामान और समय बदलने के लिए Jemima का उदाहरण बंद करें|اخرج من مثال Jemima لتغيير معداتك ووقتك|退出 Jemima 的示例后才能更改器械和时间`;
 const I18N={}; I18N_RAW.split("\n").forEach(l=>{ const p=l.split("|"); I18N[p[0].trim()]=p.slice(1); });
 const I18N_P=[
  [/^(Good morning|Good afternoon|Good evening)([\s\S]*)$/, m=>{ const g=I18N[m[1]]; return g?g[LIX[LANG]]+m[2]:null; }],
@@ -3469,10 +3561,10 @@ $("#fbSend").onclick=async()=>{
 setTimeout(()=>{ fbFlush(); },4000);
 
 rebuildLib(items); loadDraft(); renderUnit(); renderDatalists(); renderLog(); applyTheme();
-if(DEMO_ONLY){ document.body.classList.add("ro"); $("#demoBar span").innerHTML="👀 <b>View-only example</b> of Jim, your personal coach, with a sample user, Eric. Look around: History, weeks, charts, coach, plan, library and guide."; enterDemo(); }
-else if(location.hash==="#eric") enterDemo();
+if(DEMO_ONLY){ document.body.classList.add("ro"); $("#demoBar span").innerHTML="👀 <b>View-only example</b> of Jim, your personal coach, with a sample user, Jemima. Look around: History, weeks, charts, coach, plan, library and guide."; enterDemo(); }
+else if(location.hash==="#jemima"||location.hash==="#eric") enterDemo();
 renderHome();
-if(!DEMO_ONLY && location.hash!=="#eric" && !ls.get("liftlog.seenDemo",false) && !workouts().length && !templates().length) startTour();
+if(!DEMO_ONLY && location.hash!=="#jemima" && location.hash!=="#eric" && !ls.get("liftlog.seenDemo",false) && !workouts().length && !templates().length) startTour();
 if(!DEMO_ONLY){ initCloud(); initAccount(); }
 })();
 </script>
