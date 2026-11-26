@@ -188,8 +188,15 @@
     location.replace(here());
   }
 
+  // feedback works for guests too; only the project owner can read it (in the Supabase dashboard)
+  async function sendFeedback(rec) {
+    var row = { id: rec.id, type: rec.type, rating: rec.rating || null, message: rec.msg, contact: rec.contact || null,
+      lang: rec.lang || null, screen: rec.screen || null, device: rec.device || null, user_id: session ? session.user.id : null };
+    var r = await sb.from("jim_feedback").insert(row);
+    if (r.error && r.error.code !== "23505") throw r.error; // 23505 = already sent
+  }
   window.JIM_WEB = {
-    showSignIn: showSignIn, signOut: signOut, deleteData: deleteData,
+    showSignIn: showSignIn, signOut: signOut, deleteData: deleteData, sendFeedback: sendFeedback,
     provider: function () { return (session && session.user && session.user.app_metadata && session.user.app_metadata.provider) || ""; }
   };
   document.addEventListener("click", function (e) {
@@ -693,6 +700,22 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
   body .wrap{max-width:1960px}
   #tplList{grid-template-columns:repeat(3,1fr)}
 }
+/* languages & feedback */
+.fb-stars{display:flex;gap:2px}
+.fb-stars button{border:0;background:none;font-size:30px;line-height:1;cursor:pointer;color:var(--line);padding:4px 3px}
+.fb-stars button.on{color:#f5a623}
+.fb-item{border-top:1px solid var(--line);padding:10px 0}.fb-item:first-child{border-top:0}
+.fb-item .fm{font-size:12px;color:var(--muted);margin-bottom:3px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.fb-item .fx{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.lang-chips .chip{font-size:14px}
+#langSel{max-width:150px}
+html[dir=rtl] .more-card,html[dir=rtl] th,html[dir=rtl] td,html[dir=rtl] .ph .cap,html[dir=rtl] .collapse-head{text-align:right}
+html[dir=rtl] .bubble{border-radius:18px 4px 18px 18px}
+html[dir=rtl] .pill-sel{padding:6px 12px 6px 30px;background-position:10px 52%,15px 52%}
+html[dir=rtl] .cl-head>.cl-btn{margin-left:0;margin-right:auto}
+html[lang=hi] body{font-family:Inter,"Noto Sans Devanagari",system-ui,sans-serif}
+html[lang=ar] body{font-family:"Noto Sans Arabic",Inter,Tahoma,system-ui,sans-serif}
+html[lang=zh] body{font-family:Inter,"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif}
 </style>
 </head>
 <body>
@@ -708,6 +731,7 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
         <option value="gym">Commercial gym</option>
       </select>
       <div class="unit-toggle" role="group" aria-label="Weight unit"><button data-unit="kg">kg</button><button data-unit="lb">lb</button></div>
+      <select class="pill-sel" id="langSel" aria-label="Language" data-noi18n></select>
       <button class="theme-btn" id="exampleBtn" style="display:none">✕ Exit example</button>
       <button class="theme-btn" id="themeBtn" aria-label="Change theme"></button>
       <span class="sync" id="sync"><span class="dot" id="syncDot"></span><span id="syncText">This device</span></span>
@@ -732,6 +756,7 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
       <button class="more-card" data-go="library"><span class="mi">🏋️</span><b>Exercise library</b><span>349+ exercises from MuscleWiki.com with the exact muscles each one hits. Filter by muscle, equipment, type and level.</span></button>
       <button class="more-card" data-go="guide"><span class="mi">📘</span><b>Training guide</b><span>Splits, sets per week, progressive overload, rest times, plyometrics and smart shopping.</span></button>
       <button class="more-card" data-go="settings"><span class="mi">⚙️</span><b>Settings</b><span>Your name, goals, set targets, rep ranges, theme, accessibility and account.</span></button>
+      <button class="more-card" data-go="feedback"><span class="mi">💬</span><b>Feedback</b><span>Tell Jeremy what's working, what's broken and what you'd like Jim to do next.</span></button>
       <button class="more-card" data-go="tour"><span class="mi">🎬</span><b>Demo tutorial</b><span>Replay the guided tour of the app using Eric's sample data.</span></button>
     </div>
     <div class="try-block" data-try></div>
@@ -908,6 +933,7 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
       <div class="grow" style="min-width:200px"><b>Demo tutorial</b><div class="hint" style="margin:2px 0 0">A step-by-step tour of every tab using Eric's sample data (2 upper days, 1 lower day a week). Your own log isn't touched.</div></div>
       <button class="btn primary" id="tourBtn">Start tutorial</button>
     </div>
+    <div class="card" id="langCard"><h3>🌐 Language</h3><p class="hint">Choose the language Jim uses. Exercise names stay in English so they match MuscleWiki.</p><div class="chips lang-chips" id="langChips" data-noi18n></div></div>
     <div id="settingsBody"></div>
   </section>
 
@@ -978,6 +1004,27 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
       </div>
     </div>
     <div id="progHistory" style="display:none"><div id="histList"></div></div>
+  </section>
+  <section class="view" id="view-feedback">
+    <button class="back-more" data-go="more">‹ More</button>
+    <h2>Feedback</h2>
+    <p class="sub">Tell Jeremy what's working, what's broken and what you'd like Jim to do next. Every message gets read.</p>
+    <div class="card" id="fbForm">
+      <h3>Send feedback</h3>
+      <label class="f">What kind of feedback?</label>
+      <div class="chips" id="fbType"><button class="chip on" data-fbt="idea">💡 Idea</button><button class="chip" data-fbt="bug">🐛 Something's broken</button><button class="chip" data-fbt="love">❤️ Something I like</button><button class="chip" data-fbt="lang">🌐 Translation fix</button><button class="chip" data-fbt="other">💬 Other</button></div>
+      <label class="f" style="margin-top:14px">How are you liking Jim? <span class="hl" style="font-weight:500;color:var(--muted)">optional</span></label>
+      <div class="fb-stars" id="fbStars" role="group" aria-label="Rating"><button data-fbr="1" aria-label="1 star">★</button><button data-fbr="2" aria-label="2 stars">★</button><button data-fbr="3" aria-label="3 stars">★</button><button data-fbr="4" aria-label="4 stars">★</button><button data-fbr="5" aria-label="5 stars">★</button></div>
+      <label class="f" for="fbMsg" style="margin-top:12px">Your message</label>
+      <textarea id="fbMsg" rows="5" maxlength="2000" placeholder="What happened, or what would you like to see?"></textarea>
+      <label class="f" for="fbContact" style="margin-top:12px">Name or email <span class="hl" style="font-weight:500;color:var(--muted)">optional, only if you'd like a reply</span></label>
+      <input type="text" id="fbContact" maxlength="120" autocomplete="email" placeholder="you@example.com">
+      <p class="hint" style="margin:10px 0">Jim also sends the app language, the screen you came from and whether you're on a phone or computer, so problems are easier to fix. Nothing from your workout log is included.</p>
+      <button class="btn primary block" id="fbSend">Send feedback</button>
+      <p class="hint" id="fbStatus" style="margin:8px 0 0"></p>
+    </div>
+    <div class="card" id="fbPast" style="display:none"><h3>Your feedback</h3><div id="fbList"></div></div>
+    <div class="card" id="fbInbox" style="display:none"><h3>Feedback inbox</h3><p class="hint">Only you can see this: every message people have sent.</p><div id="fbInboxList"></div></div>
   </section>
   <footer class="copy">© <span id="copyYear">2026</span> Jeremy Baiden. All rights reserved. Jim, its name, logo, design and content may not be copied or reused without permission. <br>Exercise information (names, muscles worked, subgroups, level and type) courtesy of <a href="https://musclewiki.com/" target="_blank" rel="noopener">MuscleWiki.com</a>, used with credit for non-profit use. Exercise demos and videos are on MuscleWiki.com. Jim is not affiliated with MuscleWiki.</footer>
 </div>
@@ -2739,7 +2786,7 @@ function clEnhance(){
     if(!head.querySelector(":scope > .cl-btn")){ head.classList.add("cl-head"); const b=document.createElement("button"); b.className="cl-btn"; b.type="button"; head.appendChild(b); }
     keep.classList.add("cl-keep"); card.dataset.clk=clKey(card,head);
     const on=clSet.has(card.dataset.clk); card.classList.toggle("collapsed",on);
-    const b=head.querySelector(":scope > .cl-btn"); const t=on?"Show ▼":"Hide ▲"; if(b.textContent!==t) b.textContent=t; b.setAttribute("aria-expanded",String(!on));
+    const b=head.querySelector(":scope > .cl-btn"); const t=on?"Show ▼":"Hide ▲"; if(b.dataset.clt!==t){ b.dataset.clt=t; b.textContent=t; } b.setAttribute("aria-expanded",String(!on));
   });
   document.querySelectorAll(".view").forEach(v=>{ const bar=v.querySelector(":scope > .cl-bar"); if(bar){ const any=v.querySelectorAll(".card[data-clk]").length; bar.style.display=any>1?"":"none"; } });
 }
@@ -2752,8 +2799,9 @@ document.addEventListener("click",e=>{
 
 { const y=new Date().getFullYear(); const el=document.getElementById("copyYear"); if(el&&y>2026) el.textContent="2026–"+y; }
 let currentTab="home";
-const MORE_TABS=["more","library","guide","settings","photos","bw"];
+const MORE_TABS=["more","library","guide","settings","photos","bw","feedback"];
 function showTab(t){
+  if(t==="feedback"&&currentTab!=="feedback") fbFrom=currentTab;
   currentTab=t;
   $$(".view").forEach(v=>v.classList.toggle("on",v.id==="view-"+t));
   $$("nav.tabs button[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===t || (b.dataset.tab==="more" && MORE_TABS.includes(t))));
@@ -2769,6 +2817,7 @@ function showTab(t){
   if(t==="photos") renderPhotos();
   if(t==="bw") renderBW();
   if(t==="more") renderTry();
+  if(t==="feedback") renderFeedback();
   window.scrollTo(0,0);
 }
 $$("nav.tabs button[data-tab]").forEach(b=>b.onclick=()=>{ if(currentTab==="settings" && b.dataset.tab!=="settings" && sdraft){ sdraft=null; applyTheme(); } if(b.dataset.tab!=="library") libTarget=null; showTab(b.dataset.tab); });
@@ -2795,6 +2844,447 @@ function renderAll(){ if(!demo && (workouts().length||templates().length)) { con
 }
 let toastT; function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("on"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("on"),2600); }
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{ applyTheme(); });
+
+/* ================= LANGUAGES ================= */
+const LANGS=[["en","English"],["es","Español"],["fr","Français"],["pt","Português"],["hi","हिन्दी"],["ar","العربية"],["zh","中文（普通话）"]];
+const LIX={es:0,fr:1,pt:2,hi:3,ar:4,zh:5};
+// one line per string: English|Spanish|French|Portuguese|Hindi|Arabic|Mandarin
+const I18N_RAW=`Train|Entrenar|Entraîner|Treinar|ट्रेन|تمرّن|训练
+Plan|Plan|Plan|Plano|प्लान|الخطة|计划
+Progress|Progreso|Progrès|Progresso|प्रगति|التقدم|进度
+More|Más|Plus|Mais|और|المزيد|更多
+your personal coach|tu entrenador personal|ton coach personnel|seu treinador pessoal|आपका पर्सनल कोच|مدربك الشخصي|你的私人教练
+Home (no dumbbells)|Casa (sin mancuernas)|Maison (sans haltères)|Casa (sem halteres)|घर (बिना डम्बल)|المنزل (بدون دمبل)|在家（无哑铃）
+Home (dumbbells)|Casa (con mancuernas)|Maison (haltères)|Casa (com halteres)|घर (डम्बल के साथ)|المنزل (مع دمبل)|在家（有哑铃）
+Commercial gym|Gimnasio|Salle de sport|Academia|जिम|نادٍ رياضي|健身房
+This device|Este dispositivo|Cet appareil|Este dispositivo|यह डिवाइस|هذا الجهاز|此设备
+Synced|Sincronizado|Synchronisé|Sincronizado|सिंक हो गया|تمت المزامنة|已同步
+Saved on this device|Guardado en este dispositivo|Enregistré sur cet appareil|Salvo neste dispositivo|इस डिवाइस पर सेव है|محفوظ على هذا الجهاز|已保存在此设备
+✕ Exit example|✕ Salir del ejemplo|✕ Quitter l'exemple|✕ Sair do exemplo|✕ उदाहरण बंद करें|✕ الخروج من المثال|✕ 退出示例
+✕ Exit tour|✕ Salir del tour|✕ Quitter la visite|✕ Sair do tour|✕ टूर बंद करें|✕ إنهاء الجولة|✕ 退出导览
+Exit example|Salir del ejemplo|Quitter l'exemple|Sair do exemplo|उदाहरण बंद करें|الخروج من المثال|退出示例
+Skip tour|Saltar tour|Passer la visite|Pular tour|टूर छोड़ें|تخطَّ الجولة|跳过导览
+Next →|Siguiente →|Suivant →|Próximo →|अगला →|التالي →|下一步 →
+← Back|← Atrás|← Retour|← Voltar|← पीछे|← رجوع|← 返回
+Start my own log →|Empezar mi registro →|Commencer mon journal →|Começar meu registro →|अपना लॉग शुरू करें →|ابدأ سجلي الخاص →|开始我的记录 →
+Take the demo tutorial|Ver el tutorial|Suivre le tutoriel|Fazer o tutorial|डेमो ट्यूटोरियल देखें|ابدأ الدرس التوضيحي|观看演示教程
+Start my own log|Empezar mi registro|Commencer mon journal|Começar meu registro|अपना लॉग शुरू करें|ابدأ سجلي الخاص|开始我的记录
+👋 Hey, I'm Jim, your personal coach|👋 Hola, soy Jim, tu entrenador personal|👋 Salut, je suis Jim, ton coach personnel|👋 Oi, eu sou o Jim, seu treinador pessoal|👋 नमस्ते, मैं Jim हूं, आपका पर्सनल कोच|👋 مرحبًا، أنا جيم، مدربك الشخصي|👋 你好，我是 Jim，你的私人教练
+Hide all cards|Ocultar todas|Masquer toutes les cartes|Ocultar todos|सभी कार्ड छिपाएं|إخفاء كل البطاقات|隐藏所有卡片
+Show all cards|Mostrar todas|Afficher toutes les cartes|Mostrar todos|सभी कार्ड दिखाएं|إظهار كل البطاقات|显示所有卡片
+Hide all|Ocultar todo|Tout masquer|Ocultar tudo|सब छिपाएं|إخفاء الكل|全部隐藏
+Show all|Mostrar todo|Tout afficher|Mostrar tudo|सब दिखाएं|إظهار الكل|全部显示
+Hide ▲|Ocultar ▲|Masquer ▲|Ocultar ▲|छिपाएं ▲|إخفاء ▲|隐藏 ▲
+Show ▼|Mostrar ▼|Afficher ▼|Mostrar ▼|दिखाएं ▼|إظهار ▼|显示 ▼
+Everything else Jim can help with.|Todo lo demás en lo que Jim puede ayudarte.|Tout le reste avec lequel Jim peut t'aider.|Tudo mais em que o Jim pode ajudar.|बाकी सब कुछ जिसमें Jim मदद कर सकता है।|كل ما يمكن أن يساعدك فيه جيم أيضًا.|Jim 还能帮你做的其他事。
+Progress photos|Fotos de progreso|Photos de progression|Fotos de progresso|प्रगति की फ़ोटो|صور التقدم|进度照片
+Body weight|Peso corporal|Poids corporel|Peso corporal|शरीर का वज़न|وزن الجسم|体重
+Exercise library|Biblioteca de ejercicios|Bibliothèque d'exercices|Biblioteca de exercícios|एक्सरसाइज़ लाइब्रेरी|مكتبة التمارين|动作库
+Training guide|Guía de entrenamiento|Guide d'entraînement|Guia de treino|ट्रेनिंग गाइड|دليل التدريب|训练指南
+Settings|Ajustes|Paramètres|Configurações|सेटिंग्स|الإعدادات|设置
+Demo tutorial|Tutorial|Tutoriel|Tutorial|डेमो ट्यूटोरियल|الدرس التوضيحي|演示教程
+Feedback|Comentarios|Avis|Feedback|फ़ीडबैक|الملاحظات|反馈
+‹ More|‹ Más|‹ Plus|‹ Mais|‹ और|‹ المزيد|‹ 更多
+Your own before-and-after photos, sorted by month. Compare any two side by side. Just for you.|Tus fotos de antes y después, ordenadas por mes. Compara dos lado a lado. Solo para ti.|Tes photos avant/après, triées par mois. Compare-en deux côte à côte. Rien que pour toi.|Suas fotos de antes e depois, organizadas por mês. Compare duas lado a lado. Só para você.|आपकी पहले-और-बाद की फ़ोटो, महीने के हिसाब से। कोई भी दो साथ-साथ देखें। सिर्फ़ आपके लिए।|صورك قبل وبعد، مرتبة حسب الشهر. قارن أي صورتين جنبًا إلى جنب. لك وحدك.|你的前后对比照，按月份排列。任意两张并排对比。仅你可见。
+Log your weight and see the trend, with a 7-day average that smooths out daily ups and downs.|Registra tu peso y mira la tendencia, con un promedio de 7 días que suaviza los altibajos diarios.|Note ton poids et vois la tendance, avec une moyenne sur 7 jours qui lisse les variations quotidiennes.|Registre seu peso e veja a tendência, com uma média de 7 dias que suaviza as variações diárias.|अपना वज़न लिखें और ट्रेंड देखें, 7-दिन के औसत के साथ जो रोज़ के उतार-चढ़ाव को बराबर करता है।|سجّل وزنك وشاهد الاتجاه، مع متوسط 7 أيام يخفف التقلبات اليومية.|记录体重并查看趋势，7 天平均值可平滑每日波动。
+349+ exercises from MuscleWiki.com with the exact muscles each one hits. Filter by muscle, equipment, type and level.|Más de 349 ejercicios de MuscleWiki.com con los músculos exactos que trabaja cada uno. Filtra por músculo, equipo, tipo y nivel.|Plus de 349 exercices de MuscleWiki.com avec les muscles précis travaillés. Filtre par muscle, équipement, type et niveau.|Mais de 349 exercícios do MuscleWiki.com com os músculos exatos de cada um. Filtre por músculo, equipamento, tipo e nível.|MuscleWiki.com की 349+ एक्सरसाइज़, हर एक से काम करने वाली सटीक मांसपेशियों के साथ। मांसपेशी, उपकरण, प्रकार और लेवल से फ़िल्टर करें।|أكثر من 349 تمرينًا من MuscleWiki.com مع العضلات التي يستهدفها كل تمرين. صفِّ حسب العضلة والمعدات والنوع والمستوى.|来自 MuscleWiki.com 的 349+ 个动作，标明每个动作锻炼的具体肌肉。可按肌肉、器械、类型和难度筛选。
+Splits, sets per week, progressive overload, rest times, plyometrics and smart shopping.|Rutinas, series por semana, sobrecarga progresiva, descansos, pliometría y compras inteligentes.|Programmes, séries par semaine, surcharge progressive, temps de repos, pliométrie et achats malins.|Divisões, séries por semana, sobrecarga progressiva, descanso, pliometria e compras inteligentes.|स्प्लिट, हफ़्ते के सेट, प्रोग्रेसिव ओवरलोड, आराम का समय, प्लायोमेट्रिक्स और समझदारी से खरीदारी।|التقسيمات، والمجموعات الأسبوعية، والحمل التدريجي، وأوقات الراحة، والبليومترك، والتسوق الذكي.|训练分化、每周组数、渐进超负荷、休息时间、增强式训练和精明购物。
+Your name, goals, set targets, rep ranges, theme, accessibility and account.|Tu nombre, objetivos, series objetivo, rangos de repeticiones, idioma, accesibilidad y cuenta.|Ton prénom, objectifs, séries cibles, plages de répétitions, langue, accessibilité et compte.|Seu nome, objetivos, metas de séries, faixas de repetições, idioma, acessibilidade e conta.|आपका नाम, लक्ष्य, सेट टारगेट, रेप रेंज, भाषा, सुगम्यता और खाता।|اسمك وأهدافك وأهداف المجموعات ونطاقات التكرار واللغة وإمكانية الوصول والحساب.|你的名字、目标、组数目标、次数范围、语言、无障碍和账户。
+Replay the guided tour of the app using Eric's sample data.|Repite el recorrido guiado con los datos de ejemplo de Eric.|Rejoue la visite guidée avec les données d'exemple d'Eric.|Reveja o tour guiado com os dados de exemplo do Eric.|Eric के सैंपल डेटा के साथ ऐप का गाइडेड टूर फिर से देखें।|أعد الجولة الإرشادية باستخدام بيانات إريك التجريبية.|用 Eric 的示例数据重温应用导览。
+Tell Jeremy what's working, what's broken and what you'd like Jim to do next.|Cuéntale a Jeremy qué funciona, qué falla y qué te gustaría que Jim hiciera.|Dis à Jeremy ce qui marche, ce qui bloque et ce que tu aimerais que Jim fasse ensuite.|Conte ao Jeremy o que funciona, o que está quebrado e o que você gostaria que o Jim fizesse.|Jeremy को बताएं क्या ठीक चल रहा है, क्या टूटा है और आप Jim से आगे क्या चाहते हैं।|أخبر جيريمي بما يعمل وما لا يعمل وما تريد أن يفعله جيم لاحقًا.|告诉 Jeremy 哪些好用、哪些坏了，以及你希望 Jim 接下来做什么。
+Tell Jeremy what's working, what's broken and what you'd like Jim to do next. Every message gets read.|Cuéntale a Jeremy qué funciona, qué falla y qué te gustaría que Jim hiciera. Se leen todos los mensajes.|Dis à Jeremy ce qui marche, ce qui bloque et ce que tu aimerais que Jim fasse ensuite. Chaque message est lu.|Conte ao Jeremy o que funciona, o que está quebrado e o que você gostaria que o Jim fizesse. Toda mensagem é lida.|Jeremy को बताएं क्या ठीक चल रहा है, क्या टूटा है और आप Jim से आगे क्या चाहते हैं। हर संदेश पढ़ा जाता है।|أخبر جيريمي بما يعمل وما لا يعمل وما تريد أن يفعله جيم لاحقًا. تُقرأ كل رسالة.|告诉 Jeremy 哪些好用、哪些坏了，以及你希望 Jim 接下来做什么。每条消息都会被阅读。
+Log workout|Registrar entrenamiento|Noter la séance|Registrar treino|वर्कआउट लॉग करें|تسجيل تمرين|记录训练
+Edit workout|Editar entrenamiento|Modifier la séance|Editar treino|वर्कआउट बदलें|تعديل التمرين|编辑训练
+Start from one of your sessions or add exercises as you go.|Empieza desde una de tus sesiones o añade ejercicios sobre la marcha.|Pars d'une de tes séances ou ajoute des exercices au fur et à mesure.|Comece por uma das suas sessões ou adicione exercícios conforme avança.|अपने किसी सेशन से शुरू करें या चलते-चलते एक्सरसाइज़ जोड़ें।|ابدأ من إحدى جلساتك أو أضف التمارين أثناء التمرين.|从你的某个训练课开始，或边练边添加动作。
+Start a session|Empezar una sesión|Démarrer une séance|Iniciar uma sessão|सेशन शुरू करें|ابدأ جلسة|开始训练课
+Workout|Entrenamiento|Séance|Treino|वर्कआउट|التمرين|训练
+Date|Fecha|Date|Data|तारीख|التاريخ|日期
+e.g. Push day|p. ej. Día de empuje|ex. Jour de poussée|ex. Dia de empurrar|जैसे पुश डे|مثال: يوم الدفع|例如：推日
++ Add exercise|+ Añadir ejercicio|+ Ajouter un exercice|+ Adicionar exercício|+ एक्सरसाइज़ जोड़ें|+ إضافة تمرين|+ 添加动作
+Browse library|Ver biblioteca|Parcourir la bibliothèque|Ver biblioteca|लाइब्रेरी देखें|تصفح المكتبة|浏览动作库
+Notes|Notas|Notes|Notas|नोट्स|ملاحظات|备注
+How did it feel? Sleep, energy, anything worth remembering|¿Cómo te sentiste? Sueño, energía, lo que valga la pena recordar|Comment c'était ? Sommeil, énergie, tout ce qui vaut la peine d'être noté|Como foi? Sono, energia, algo que valha lembrar|कैसा लगा? नींद, एनर्जी, कुछ भी याद रखने लायक|كيف كان شعورك؟ النوم، الطاقة، أي شيء يستحق التذكر|感觉如何？睡眠、精力，任何值得记住的事
+Rest timer|Temporizador de descanso|Minuteur de repos|Cronômetro de descanso|आराम टाइमर|مؤقت الراحة|休息计时
+Stop|Parar|Arrêter|Parar|रोकें|إيقاف|停止
+⛶ Big timer|⛶ Temporizador grande|⛶ Grand minuteur|⛶ Cronômetro grande|⛶ बड़ा टाइमर|⛶ مؤقت كبير|⛶ 大计时器
+Cancel|Cancelar|Annuler|Cancelar|रद्द करें|إلغاء|取消
+Clear|Borrar|Effacer|Limpar|साफ़ करें|مسح|清空
+Save workout|Guardar entrenamiento|Enregistrer la séance|Salvar treino|वर्कआउट सेव करें|حفظ التمرين|保存训练
+Save changes|Guardar cambios|Enregistrer|Salvar alterações|बदलाव सेव करें|حفظ التغييرات|保存更改
+Set|Serie|Série|Série|सेट|المجموعة|组
+Reps|Reps|Répétitions|Repetições|रेप्स|التكرارات|次数
++ Add set|+ Añadir serie|+ Ajouter une série|+ Adicionar série|+ सेट जोड़ें|+ إضافة مجموعة|+ 添加一组
+Exercise name|Nombre del ejercicio|Nom de l'exercice|Nome do exercício|एक्सरसाइज़ का नाम|اسم التمرين|动作名称
+No exercises yet|Aún no hay ejercicios|Pas encore d'exercices|Nenhum exercício ainda|अभी कोई एक्सरसाइज़ नहीं|لا توجد تمارين بعد|还没有动作
+Start a session above, add one, or browse the library.|Empieza una sesión arriba, añade un ejercicio o explora la biblioteca.|Démarre une séance ci-dessus, ajoutes-en un ou parcours la bibliothèque.|Inicie uma sessão acima, adicione um exercício ou veja a biblioteca.|ऊपर सेशन शुरू करें, एक्सरसाइज़ जोड़ें, या लाइब्रेरी देखें।|ابدأ جلسة بالأعلى أو أضف تمرينًا أو تصفح المكتبة.|在上方开始训练课、添加动作或浏览动作库。
+Reps left in the tank on your last set|Repeticiones en reserva en tu última serie|Répétitions en réserve sur ta dernière série|Repetições na reserva na última série|आखिरी सेट में बचे हुए रेप्स|التكرارات المتبقية في آخر مجموعة|最后一组还能做几次
+0 · failure|0 · fallo|0 · échec|0 · falha|0 · फ़ेल्योर|0 · فشل|0 · 力竭
+Rest|Descanso|Repos|Descanso|आराम|راحة|休息
+Rest done. Go!|¡Descanso terminado, vamos!|Repos terminé, c'est parti !|Descanso acabou, vai!|आराम खत्म, चलो!|انتهت الراحة، انطلق!|休息结束，开始！
+Rest done. Time for your next set|Descanso terminado. Hora de la siguiente serie|Repos terminé. Place à la série suivante|Descanso acabou. Hora da próxima série|आराम खत्म। अगले सेट का समय|انتهت الراحة. حان وقت المجموعة التالية|休息结束，开始下一组
+Close|Cerrar|Fermer|Fechar|बंद करें|إغلاق|关闭
+Delete|Eliminar|Supprimer|Excluir|हटाएं|حذف|删除
+Delete?|¿Eliminar?|Supprimer ?|Excluir?|हटाएं?|حذف؟|删除？
+This can't be undone.|Esto no se puede deshacer.|Action irréversible.|Isso não pode ser desfeito.|इसे वापस नहीं किया जा सकता।|لا يمكن التراجع عن هذا.|此操作无法撤销。
+Delete workout?|¿Eliminar entrenamiento?|Supprimer la séance ?|Excluir treino?|वर्कआउट हटाएं?|حذف التمرين؟|删除训练？
+Delete session?|¿Eliminar sesión?|Supprimer la séance ?|Excluir sessão?|सेशन हटाएं?|حذف الجلسة؟|删除训练课？
+Replace workout?|¿Reemplazar entrenamiento?|Remplacer la séance ?|Substituir treino?|वर्कआउट बदलें?|استبدال التمرين؟|替换训练？
+Replace|Reemplazar|Remplacer|Substituir|बदलें|استبدال|替换
+Workout saved|Entrenamiento guardado|Séance enregistrée|Treino salvo|वर्कआउट सेव हो गया|تم حفظ التمرين|训练已保存
+Session saved|Sesión guardada|Séance enregistrée|Sessão salva|सेशन सेव हो गया|تم حفظ الجلسة|训练课已保存
+Add at least one exercise with reps|Añade al menos un ejercicio con repeticiones|Ajoute au moins un exercice avec des répétitions|Adicione pelo menos um exercício com repetições|कम से कम एक एक्सरसाइज़ रेप्स के साथ जोड़ें|أضف تمرينًا واحدًا على الأقل مع التكرارات|至少添加一个有次数的动作
+Add at least one exercise|Añade al menos un ejercicio|Ajoute au moins un exercice|Adicione pelo menos um exercício|कम से कम एक एक्सरसाइज़ जोड़ें|أضف تمرينًا واحدًا على الأقل|至少添加一个动作
+Settings saved|Ajustes guardados|Paramètres enregistrés|Configurações salvas|सेटिंग्स सेव हो गईं|تم حفظ الإعدادات|设置已保存
+Couldn't save – try again|No se pudo guardar, inténtalo de nuevo|Échec de l'enregistrement, réessaie|Não foi possível salvar, tente de novo|सेव नहीं हो सका, फिर कोशिश करें|تعذّر الحفظ، حاول مجددًا|保存失败，请重试
+Edit|Editar|Modifier|Editar|बदलें|تعديل|编辑
+Copy|Copiar|Copier|Copiar|कॉपी|نسخ|复制
+Start|Empezar|Commencer|Iniciar|शुरू करें|ابدأ|开始
+Pick a split for where you train, then adjust the sessions to suit you. Exercises and muscle information courtesy of|Elige una rutina según dónde entrenas y ajusta las sesiones a tu gusto. Ejercicios e información muscular cortesía de|Choisis un programme selon l'endroit où tu t'entraînes, puis adapte les séances. Exercices et infos musculaires fournis par|Escolha uma divisão para onde você treina e ajuste as sessões. Exercícios e informações musculares cortesia de|जहां आप ट्रेन करते हैं उसके लिए स्प्लिट चुनें, फिर सेशन अपने हिसाब से बदलें। एक्सरसाइज़ और मांसपेशी जानकारी सौजन्य से|اختر تقسيمة تناسب مكان تمرينك، ثم عدّل الجلسات كما تحب. التمارين ومعلومات العضلات مقدمة من|根据训练地点选择分化，再按需调整训练课。动作和肌肉信息由以下网站提供：
+Start from a split|Empieza con una rutina|Partir d'un programme|Comece por uma divisão|किसी स्प्लिट से शुरू करें|ابدأ من تقسيمة|从训练分化开始
+Exercises are picked for:|Ejercicios elegidos para:|Exercices choisis pour :|Exercícios escolhidos para:|एक्सरसाइज़ इसके लिए चुनी गईं:|التمارين مختارة لـ:|动作适用于：
+My sessions|Mis sesiones|Mes séances|Minhas sessões|मेरे सेशन|جلساتي|我的训练课
++ New session|+ Nueva sesión|+ Nouvelle séance|+ Nova sessão|+ नया सेशन|+ جلسة جديدة|+ 新训练课
+Weekly sets per muscle|Series semanales por músculo|Séries hebdomadaires par muscle|Séries semanais por músculo|मांसपेशी के हिसाब से साप्ताहिक सेट|المجموعات الأسبوعية لكل عضلة|每块肌肉的每周组数
+Create sessions|Crear sesiones|Créer les séances|Criar sessões|सेशन बनाएं|إنشاء الجلسات|创建训练课
+In my week|En mi semana|Dans ma semaine|Na minha semana|मेरे हफ़्ते में|ضمن أسبوعي|计入本周
+Strength & muscle|Fuerza y músculo|Force et muscle|Força e músculo|ताकत और मांसपेशी|القوة والعضلات|力量与肌肉
+Sports & athletic|Deporte y atletismo|Sport et athlétisme|Esportes e atletismo|खेल और एथलेटिक|الرياضة واللياقة|运动与竞技
+No sessions yet|Aún no hay sesiones|Pas encore de séances|Nenhuma sessão ainda|अभी कोई सेशन नहीं|لا توجد جلسات بعد|还没有训练课
+Create a split above or build your own.|Crea una rutina arriba o arma la tuya.|Crée un programme ci-dessus ou construis le tien.|Crie uma divisão acima ou monte a sua.|ऊपर स्प्लिट बनाएं या अपना खुद का बनाएं।|أنشئ تقسيمة بالأعلى أو ابنِ تقسيمتك.|在上方创建分化，或自己搭建。
+Session name|Nombre de la sesión|Nom de la séance|Nome da sessão|सेशन का नाम|اسم الجلسة|训练课名称
+New session|Nueva sesión|Nouvelle séance|Nova sessão|नया सेशन|جلسة جديدة|新训练课
+Edit session|Editar sesión|Modifier la séance|Editar sessão|सेशन बदलें|تعديل الجلسة|编辑训练课
+Sets|Series|Séries|Séries|सेट|المجموعات|组数
+Pick from library|Elegir de la biblioteca|Choisir dans la bibliothèque|Escolher da biblioteca|लाइब्रेरी से चुनें|اختر من المكتبة|从动作库选择
+Save session|Guardar sesión|Enregistrer la séance|Salvar sessão|सेशन सेव करें|حفظ الجلسة|保存训练课
+Search & filters|Búsqueda y filtros|Recherche et filtres|Busca e filtros|खोज और फ़िल्टर|البحث والتصفية|搜索与筛选
+Search exercises…|Buscar ejercicios…|Rechercher des exercices…|Buscar exercícios…|एक्सरसाइज़ खोजें…|ابحث عن تمارين…|搜索动作…
+Tap as many filters as you like. Tap again to remove one.|Toca todos los filtros que quieras. Toca de nuevo para quitar uno.|Touche autant de filtres que tu veux. Touche à nouveau pour en retirer un.|Toque em quantos filtros quiser. Toque de novo para remover.|जितने चाहें फ़िल्टर टैप करें। हटाने के लिए फिर टैप करें।|اضغط على أي عدد من المرشحات. اضغط مجددًا للإزالة.|可多选筛选条件，再点一次即可取消。
+Advanced|Avanzado|Avancé|Avançado|एडवांस्ड|متقدم|高级
+Muscle|Músculo|Muscle|Músculo|मांसपेशी|العضلة|肌肉
+Any of these|Cualquiera|N'importe lequel|Qualquer um|इनमें से कोई|أيٌّ منها|任一
+All of these|Todos|Tous|Todos|ये सभी|كلها|全部
+Equipment|Equipo|Équipement|Equipamento|उपकरण|المعدات|器械
+Type|Tipo|Type|Tipo|प्रकार|النوع|类型
+Level|Nivel|Niveau|Nível|लेवल|المستوى|难度
+Show all equipment|Mostrar todo el equipo|Afficher tout l'équipement|Mostrar todo equipamento|सभी उपकरण दिखाएं|إظهار كل المعدات|显示所有器械
++ Create your own exercise|+ Crea tu propio ejercicio|+ Crée ton propre exercice|+ Crie seu próprio exercício|+ अपनी एक्सरसाइज़ बनाएं|+ أنشئ تمرينك الخاص|+ 创建自己的动作
+All|Todos|Tous|Todos|सभी|الكل|全部
+⚡ Plyo & sport|⚡ Pliometría y deporte|⚡ Pliométrie et sport|⚡ Pliometria e esporte|⚡ प्लायो और खेल|⚡ بليومترك ورياضة|⚡ 增强式与运动
+All available|Todo lo disponible|Tout le disponible|Todos disponíveis|सभी उपलब्ध|كل المتاح|全部可用
+Any|Cualquiera|Tous|Qualquer|कोई भी|أي|任意
+Compound|Compuesto|Polyarticulaire|Composto|कंपाउंड|مركّب|复合
+Isolation|Aislamiento|Isolation|Isolado|आइसोलेशन|عزل|孤立
+Novice|Novato|Novice|Novato|नौसिखिया|مبتدئ جدًا|新手
+Beginner|Principiante|Débutant|Iniciante|शुरुआती|مبتدئ|初级
+Intermediate|Intermedio|Intermédiaire|Intermediário|इंटरमीडिएट|متوسط|中级
+Main muscles|Músculos principales|Muscles principaux|Músculos principais|मुख्य मांसपेशियां|العضلات الرئيسية|主要肌肉
+Also works|También trabaja|Travaille aussi|Também trabalha|ये भी काम करती हैं|يعمل أيضًا|也锻炼
++ Log|+ Registrar|+ Noter|+ Registrar|+ लॉग|+ تسجيل|+ 记录
++ Session|+ Sesión|+ Séance|+ Sessão|+ सेशन|+ جلسة|+ 训练课
+Edit muscles|Editar músculos|Modifier les muscles|Editar músculos|मांसपेशियां बदलें|تعديل العضلات|编辑肌肉
+★ Top pick|★ Mejor opción|★ Top choix|★ Melhor escolha|★ टॉप पिक|★ الأفضل|★ 首选
+⚡ Plyo|⚡ Pliometría|⚡ Pliométrie|⚡ Pliometria|⚡ प्लायो|⚡ بليومترك|⚡ 增强式
+Your exercise|Tu ejercicio|Ton exercice|Seu exercício|आपकी एक्सरसाइज़|تمرينك|你的动作
+Bodyweight|Peso corporal|Poids du corps|Peso corporal|बॉडीवेट|وزن الجسم|自重
+Band|Banda|Élastique|Elástico|बैंड|شريط مطاطي|弹力带
+Dumbbells|Mancuernas|Haltères|Halteres|डम्बल|دمبل|哑铃
+Kettlebell|Pesa rusa|Kettlebell|Kettlebell|केटलबेल|كيتل بيل|壶铃
+Medicine ball|Balón medicinal|Médecine-ball|Bola medicinal|मेडिसिन बॉल|كرة طبية|药球
+Barbell|Barra|Barre|Barra|बारबेल|بار حديد|杠铃
+Cables|Poleas|Poulies|Cabos|केबल|كابلات|绳索
+Machine|Máquina|Machine|Máquina|मशीन|جهاز|器械
+Smith machine|Máquina Smith|Smith machine|Máquina Smith|स्मिथ मशीन|جهاز سميث|史密斯机
+Chest|Pecho|Pectoraux|Peito|छाती|الصدر|胸
+Back|Espalda|Dos|Costas|पीठ|الظهر|背
+Shoulders|Hombros|Épaules|Ombros|कंधे|الأكتاف|肩
+Biceps|Bíceps|Biceps|Bíceps|बाइसेप्स|البايسبس|肱二头肌
+Triceps|Tríceps|Triceps|Tríceps|ट्राइसेप्स|الترايسبس|肱三头肌
+Quads|Cuádriceps|Quadriceps|Quadríceps|क्वाड्स|الفخذ الأمامي|股四头肌
+Hamstrings|Isquiotibiales|Ischio-jambiers|Posteriores|हैमस्ट्रिंग|الفخذ الخلفي|腘绳肌
+Glutes|Glúteos|Fessiers|Glúteos|ग्लूट्स|الألوية|臀肌
+Calves|Pantorrillas|Mollets|Panturrilhas|पिंडलियां|السمانة|小腿
+Core|Core|Gainage|Core|कोर|الجذع|核心
+Traps|Trapecios|Trapèzes|Trapézio|ट्रैप्स|شبه المنحرفة|斜方肌
+Forearms|Antebrazos|Avant-bras|Antebraços|फ़ोरआर्म्स|الساعدان|前臂
+Lower back|Zona lumbar|Bas du dos|Lombar|निचली पीठ|أسفل الظهر|下背
+Charts|Gráficos|Graphiques|Gráficos|चार्ट|الرسوم البيانية|图表
+History|Historial|Historique|Histórico|इतिहास|السجل|历史
+All time|Todo el tiempo|Depuis le début|Todo o período|शुरू से अब तक|كل الوقت|全部时间
+Recent|Recientes|Récent|Recentes|हाल के|الأخيرة|最近
+Custom|Personalizado|Personnalisé|Personalizado|कस्टम|مخصص|自定义
+Single week|Una semana|Une semaine|Uma semana|एक हफ़्ता|أسبوع واحد|单周
+This week|Esta semana|Cette semaine|Esta semana|इस हफ़्ते|هذا الأسبوع|本周
+Last week|La semana pasada|La semaine dernière|Semana passada|पिछले हफ़्ते|الأسبوع الماضي|上周
+Jim's notes: what to do next time|Notas de Jim: qué hacer la próxima vez|Notes de Jim : quoi faire la prochaine fois|Notas do Jim: o que fazer na próxima vez|Jim के नोट्स: अगली बार क्या करें|ملاحظات جيم: ماذا تفعل في المرة القادمة|Jim 的建议：下次怎么练
+Jim's notes|Notas de Jim|Notes de Jim|Notas do Jim|Jim के नोट्स|ملاحظات جيم|Jim 的建议
+Sets per muscle this week|Series por músculo esta semana|Séries par muscle cette semaine|Séries por músculo nesta semana|इस हफ़्ते मांसपेशी के हिसाब से सेट|المجموعات لكل عضلة هذا الأسبوع|本周每块肌肉的组数
+Strength & muscle groups|Fuerza y grupos musculares|Force et groupes musculaires|Força e grupos musculares|ताकत और मांसपेशी समूह|القوة ومجموعات العضلات|力量与肌群
+Muscle group|Grupo muscular|Groupe musculaire|Grupo muscular|मांसपेशी समूह|مجموعة العضلات|肌群
+Exercise|Ejercicio|Exercice|Exercício|एक्सरसाइज़|التمرين|动作
+Estimated 1-rep max|1RM estimado|1RM estimé|1RM estimado|अनुमानित 1-रेप मैक्स|الحد الأقصى المقدّر لتكرار واحد|估算 1RM
+Heaviest set|Serie más pesada|Série la plus lourde|Série mais pesada|सबसे भारी सेट|أثقل مجموعة|最重一组
+Personal records|Récords personales|Records personnels|Recordes pessoais|पर्सनल रिकॉर्ड|الأرقام الشخصية|个人纪录
+Sessions|Sesiones|Séances|Sessões|सेशन|الجلسات|训练次数
+Show table|Mostrar tabla|Afficher le tableau|Mostrar tabela|टेबल दिखाएं|إظهار الجدول|显示表格
+Hide table|Ocultar tabla|Masquer le tableau|Ocultar tabela|टेबल छिपाएं|إخفاء الجدول|隐藏表格
+Weekly volume|Volumen semanal|Volume hebdomadaire|Volume semanal|साप्ताहिक वॉल्यूम|الحجم الأسبوعي|每周训练量
+Workouts|Entrenamientos|Séances|Treinos|वर्कआउट|التمارين|训练
+Streak|Racha|Série|Sequência|स्ट्रीक|سلسلة|连续
+Total volume|Volumen total|Volume total|Volume total|कुल वॉल्यूम|الحجم الكلي|总训练量
+all time|en total|au total|no total|कुल|إجمالي|总计
+sessions|sesiones|séances|sessões|सेशन|جلسات|次
+weeks|semanas|semaines|semanas|हफ़्ते|أسابيع|周
+week|semana|semaine|semana|हफ़्ता|أسبوع|周
+Volume|Volumen|Volume|Volume|वॉल्यूम|الحجم|训练量
+Total|Total|Total|Total|कुल|المجموع|合计
+✓ on target|✓ en el objetivo|✓ dans la cible|✓ na meta|✓ लक्ष्य पर|✓ ضمن الهدف|✓ 达标
+No suggestions yet|Aún no hay sugerencias|Pas encore de suggestions|Nenhuma sugestão ainda|अभी कोई सुझाव नहीं|لا توجد اقتراحات بعد|暂无建议
+Log a workout and tips appear here.|Registra un entrenamiento y aquí aparecerán consejos.|Note une séance et les conseils apparaîtront ici.|Registre um treino e as dicas aparecem aqui.|वर्कआउट लॉग करें और टिप्स यहां दिखेंगी।|سجّل تمرينًا وستظهر النصائح هنا.|记录一次训练，建议就会出现在这里。
+Today's session|Sesión de hoy|Séance du jour|Sessão de hoje|आज का सेशन|جلسة اليوم|今日训练
+Start with Jim →|Empezar con Jim →|Commencer avec Jim →|Começar com o Jim →|Jim के साथ शुरू करें →|ابدأ مع جيم →|和 Jim 一起开始 →
+All suggestions in Progress →|Todas las sugerencias en Progreso →|Toutes les suggestions dans Progrès →|Todas as sugestões em Progresso →|सभी सुझाव प्रगति में →|كل الاقتراحات في التقدم →|全部建议见“进度” →
+week streak|semanas seguidas|semaines d'affilée|semanas seguidas|हफ़्ते की स्ट्रीक|أسابيع متتالية|周连续
+Step 1|Paso 1|Étape 1|Passo 1|स्टेप 1|الخطوة 1|第 1 步
+Pick your split|Elige tu rutina|Choisis ton programme|Escolha sua divisão|अपना स्प्लिट चुनें|اختر تقسيمتك|选择训练分化
+Choose a split →|Elegir rutina →|Choisir un programme →|Escolher divisão →|स्प्लिट चुनें →|اختر تقسيمة →|选择分化 →
+Just want to lift?|¿Solo quieres entrenar?|Tu veux juste t'entraîner ?|Só quer treinar?|बस लिफ़्ट करना है?|تريد التمرين فقط؟|只想开练？
+Log a workout now|Registra un entrenamiento ya|Note une séance maintenant|Registre um treino agora|अभी वर्कआउट लॉग करें|سجّل تمرينًا الآن|立即记录训练
+Add exercises as you go. Jim learns from every set.|Añade ejercicios sobre la marcha. Jim aprende de cada serie.|Ajoute des exercices au fur et à mesure. Jim apprend de chaque série.|Adicione exercícios conforme treina. O Jim aprende com cada série.|चलते-चलते एक्सरसाइज़ जोड़ें। Jim हर सेट से सीखता है।|أضف التمارين أثناء التمرين. يتعلم جيم من كل مجموعة.|边练边添加动作，Jim 会从每一组中学习。
+Start training|Empezar a entrenar|Commencer l'entraînement|Começar a treinar|ट्रेनिंग शुरू करें|ابدأ التمرين|开始训练
+Full body, upper/lower, push/pull/legs, bro split, sports and more.|Cuerpo completo, superior/inferior, empuje/tirón/piernas, rutina por grupos, deportes y más.|Full body, haut/bas, push/pull/legs, split classique, sports et plus.|Corpo inteiro, superior/inferior, empurrar/puxar/pernas, divisão por grupos, esportes e mais.|फ़ुल बॉडी, अपर/लोअर, पुश/पुल/लेग्स, ब्रो स्प्लिट, खेल और बहुत कुछ।|الجسم كامل، علوي/سفلي، دفع/سحب/أرجل، تقسيم العضلات، الرياضة والمزيد.|全身、上下肢、推拉腿、单部位分化、运动专项等。
+Your plan|Tu plan|Ton programme|Seu plano|आपका प्लान|خطتك|你的计划
+Let Jim build your week|Deja que Jim arme tu semana|Laisse Jim construire ta semaine|Deixe o Jim montar sua semana|Jim को आपका हफ़्ता बनाने दें|دع جيم يبني أسبوعك|让 Jim 安排你的一周
+See my plan|Ver mi plan|Voir mon programme|Ver meu plano|मेरा प्लान देखें|عرض خطتي|查看我的计划
+Everything's on track. Keep adding a rep or a little weight each week.|Todo va bien. Sigue sumando una repetición o un poco de peso cada semana.|Tout est sur la bonne voie. Continue d'ajouter une répétition ou un peu de poids chaque semaine.|Tudo nos trilhos. Continue somando uma repetição ou um pouco de peso por semana.|सब ठीक चल रहा है। हर हफ़्ते एक रेप या थोड़ा वज़न बढ़ाते रहें।|كل شيء على المسار الصحيح. واصل إضافة تكرار أو وزن بسيط كل أسبوع.|一切顺利。每周继续多做一次或加一点重量。
+Weight log →|Registro de peso →|Journal de poids →|Registro de peso →|वज़न लॉग →|سجل الوزن →|体重记录 →
+Account|Cuenta|Compte|Conta|खाता|الحساب|账户
+About you|Sobre ti|À propos de toi|Sobre você|आपके बारे में|عنك|关于你
+Your name|Tu nombre|Ton prénom|Seu nome|आपका नाम|اسمك|你的名字
+Shown in greetings|Se muestra en los saludos|Affiché dans les salutations|Mostrado nas saudações|अभिवादन में दिखता है|يظهر في التحية|用于问候
+Main goal|Objetivo principal|Objectif principal|Objetivo principal|मुख्य लक्ष्य|الهدف الرئيسي|主要目标
+Experience|Experiencia|Expérience|Experiência|अनुभव|الخبرة|经验
+Build muscle|Ganar músculo|Prendre du muscle|Ganhar músculo|मांसपेशी बनाना|بناء العضلات|增肌
+Get stronger|Ganar fuerza|Devenir plus fort|Ficar mais forte|ताकत बढ़ाना|زيادة القوة|变强
+Athletic power|Potencia atlética|Puissance athlétique|Potência atlética|एथलेटिक पावर|القوة الرياضية|运动爆发力
+General fitness|Forma física general|Forme générale|Condicionamento geral|सामान्य फ़िटनेस|لياقة عامة|综合健身
+Beginner (under 1 year)|Principiante (menos de 1 año)|Débutant (moins d'1 an)|Iniciante (menos de 1 ano)|शुरुआती (1 साल से कम)|مبتدئ (أقل من سنة)|初级（不到 1 年）
+Intermediate (1–3 years)|Intermedio (1–3 años)|Intermédiaire (1–3 ans)|Intermediário (1–3 anos)|इंटरमीडिएट (1–3 साल)|متوسط (1–3 سنوات)|中级（1–3 年）
+Advanced (3+ years)|Avanzado (3+ años)|Avancé (3 ans et +)|Avançado (3+ anos)|एडवांस्ड (3+ साल)|متقدم (3+ سنوات)|高级（3 年以上）
+Use recommended settings for this goal & experience|Usar ajustes recomendados para este objetivo y experiencia|Utiliser les réglages recommandés pour cet objectif et ce niveau|Usar configurações recomendadas para este objetivo e experiência|इस लक्ष्य और अनुभव के लिए सुझाई गई सेटिंग्स लगाएं|استخدم الإعدادات الموصى بها لهذا الهدف والخبرة|使用该目标和经验的推荐设置
+Weekly set targets|Series semanales objetivo|Objectifs de séries par semaine|Metas de séries semanais|साप्ताहिक सेट लक्ष्य|أهداف المجموعات الأسبوعية|每周组数目标
+Minimum (all muscles)|Mínimo (todos los músculos)|Minimum (tous les muscles)|Mínimo (todos os músculos)|न्यूनतम (सभी मांसपेशियां)|الحد الأدنى (كل العضلات)|最少（所有肌肉）
+Maximum (all muscles)|Máximo (todos los músculos)|Maximum (tous les muscles)|Máximo (todos os músculos)|अधिकतम (सभी मांसपेशियां)|الحد الأقصى (كل العضلات)|最多（所有肌肉）
+Training defaults|Valores de entrenamiento|Réglages d'entraînement|Padrões de treino|ट्रेनिंग डिफ़ॉल्ट|إعدادات التدريب|训练默认值
+Compound rest|Descanso en compuestos|Repos polyarticulaires|Descanso em compostos|कंपाउंड के बाद आराम|راحة التمارين المركبة|复合动作休息
+Isolation rest|Descanso en aislamiento|Repos isolation|Descanso em isolados|आइसोलेशन के बाद आराम|راحة تمارين العزل|孤立动作休息
+How close to failure?|¿Qué tan cerca del fallo?|À quelle distance de l'échec ?|Quão perto da falha?|फ़ेल्योर के कितने पास?|ما مدى القرب من الفشل؟|离力竭多近？
+Round weight suggestions to|Redondear sugerencias de peso a|Arrondir les poids suggérés à|Arredondar sugestões de peso para|वज़न के सुझाव इतने पर राउंड करें|تقريب الأوزان المقترحة إلى|建议重量取整到
+Accessibility|Accesibilidad|Accessibilité|Acessibilidade|सुगम्यता|إمكانية الوصول|无障碍
+Text size|Tamaño del texto|Taille du texte|Tamanho do texto|टेक्स्ट का आकार|حجم النص|文字大小
+Default|Predeterminado|Par défaut|Padrão|डिफ़ॉल्ट|افتراضي|默认
+Large|Grande|Grand|Grande|बड़ा|كبير|大
+Extra large|Muy grande|Très grand|Muito grande|बहुत बड़ा|كبير جدًا|特大
+Huge|Enorme|Énorme|Enorme|विशाल|ضخم|超大
+Seeing|Vista|Vue|Visão|देखना|الرؤية|视觉
+High contrast|Alto contraste|Contraste élevé|Alto contraste|हाई कंट्रास्ट|تباين عالٍ|高对比度
+Colour-blind safe colours|Colores aptos para daltonismo|Couleurs adaptées au daltonisme|Cores para daltônicos|कलर-ब्लाइंड के लिए सुरक्षित रंग|ألوان مناسبة لعمى الألوان|色盲友好配色
+Easy-to-read font|Fuente fácil de leer|Police facile à lire|Fonte fácil de ler|आसानी से पढ़ा जाने वाला फ़ॉन्ट|خط سهل القراءة|易读字体
+Extra text spacing|Más espacio en el texto|Espacement du texte accru|Mais espaçamento no texto|अतिरिक्त टेक्स्ट स्पेसिंग|تباعد إضافي للنص|加大文字间距
+Moving & tapping|Movimiento y toques|Mouvement et appui|Movimento e toque|हिलना और टैप करना|الحركة والنقر|操作与点按
+Bigger buttons|Botones más grandes|Boutons plus grands|Botões maiores|बड़े बटन|أزرار أكبر|更大的按钮
+Plus / minus buttons for weight and reps|Botones + / − para peso y repeticiones|Boutons plus / moins pour le poids et les répétitions|Botões + / − para peso e repetições|वज़न और रेप्स के लिए प्लस / माइनस बटन|أزرار زائد / ناقص للوزن والتكرارات|重量和次数的加减按钮
+Rest timer sound|Sonido del temporizador|Son du minuteur|Som do cronômetro|टाइमर की आवाज़|صوت المؤقت|计时提示音
+Rest timer vibration|Vibración del temporizador|Vibration du minuteur|Vibração do cronômetro|टाइमर वाइब्रेशन|اهتزاز المؤقت|计时震动
+Focus|Enfoque|Concentration|Foco|फ़ोकस|التركيز|专注
+Simple mode|Modo simple|Mode simple|Modo simples|सिंपल मोड|الوضع البسيط|简洁模式
+Reduce motion|Reducir movimiento|Réduire les animations|Reduzir movimento|मोशन कम करें|تقليل الحركة|减少动效
+App|App|Application|App|ऐप|التطبيق|应用
+Week starts on|La semana empieza el|La semaine commence le|A semana começa na|हफ़्ता शुरू होता है|يبدأ الأسبوع يوم|每周开始于
+Monday|Lunes|Lundi|Segunda-feira|सोमवार|الاثنين|周一
+Sunday|Domingo|Dimanche|Domingo|रविवार|الأحد|周日
+Saturday|Sábado|Samedi|Sábado|शनिवार|السبت|周六
+Units|Unidades|Unités|Unidades|यूनिट|الوحدات|单位
+Reset to defaults|Restablecer valores|Réinitialiser|Restaurar padrões|डिफ़ॉल्ट पर लौटें|إعادة الضبط|恢复默认
+Save settings|Guardar ajustes|Enregistrer les paramètres|Salvar configurações|सेटिंग्स सेव करें|حفظ الإعدادات|保存设置
+About & credits|Acerca de y créditos|À propos et crédits|Sobre e créditos|परिचय और श्रेय|حول التطبيق والشكر|关于与致谢
+Start tutorial|Iniciar tutorial|Lancer le tutoriel|Iniciar tutorial|ट्यूटोरियल शुरू करें|ابدأ الدرس|开始教程
+Tell Jim how you like to train. Targets, rep ranges and suggestions across the app follow these.|Dile a Jim cómo te gusta entrenar. Los objetivos, rangos y sugerencias de la app siguen estos ajustes.|Dis à Jim comment tu aimes t'entraîner. Les objectifs, plages de répétitions et suggestions suivent ces réglages.|Diga ao Jim como você gosta de treinar. Metas, faixas de repetições e sugestões seguem estas configurações.|Jim को बताएं आप कैसे ट्रेन करना पसंद करते हैं। पूरे ऐप के लक्ष्य, रेप रेंज और सुझाव इन्हीं पर चलते हैं।|أخبر جيم كيف تحب أن تتمرن. تتبع الأهداف ونطاقات التكرار والاقتراحات هذه الإعدادات.|告诉 Jim 你喜欢怎么练。应用中的目标、次数范围和建议都会以此为准。
+Add photos|Añadir fotos|Ajouter des photos|Adicionar fotos|फ़ोटो जोड़ें|إضافة صور|添加照片
+📷 Add photos|📷 Añadir fotos|📷 Ajouter des photos|📷 Adicionar fotos|📷 फ़ोटो जोड़ें|📷 إضافة صور|📷 添加照片
+Pose|Pose|Pose|Pose|पोज़|الوضعية|姿势
+Front|Frente|Face|Frente|सामने|أمام|正面
+Side|Lado|Profil|Lado|साइड|جانب|侧面
+Other|Otro|Autre|Outro|अन्य|أخرى|其他
+Note|Nota|Note|Nota|नोट|ملاحظة|备注
+optional|opcional|facultatif|opcional|वैकल्पिक|اختياري|可选
+Where to keep them|Dónde guardarlas|Où les garder|Onde guardar|कहां रखें|أين تُحفظ|保存位置
+This device only|Solo este dispositivo|Cet appareil seulement|Só este dispositivo|सिर्फ़ यह डिवाइस|هذا الجهاز فقط|仅此设备
+My Jim account|Mi cuenta de Jim|Mon compte Jim|Minha conta Jim|मेरा Jim खाता|حسابي في جيم|我的 Jim 账户
+Compare two|Comparar dos|Comparer deux|Comparar duas|दो की तुलना करें|قارن صورتين|对比两张
+Log your weight|Registra tu peso|Note ton poids|Registre seu peso|अपना वज़न लिखें|سجّل وزنك|记录体重
+Save weight|Guardar peso|Enregistrer le poids|Salvar peso|वज़न सेव करें|حفظ الوزن|保存体重
+Weight saved|Peso guardado|Poids enregistré|Peso salvo|वज़न सेव हो गया|تم حفظ الوزن|体重已保存
+Trend|Tendencia|Tendance|Tendência|ट्रेंड|الاتجاه|趋势
+Goal weight|Peso objetivo|Poids cible|Peso meta|लक्ष्य वज़न|الوزن المستهدف|目标体重
+Set goal|Fijar objetivo|Définir l'objectif|Definir meta|लक्ष्य सेट करें|حدد الهدف|设定目标
+Log|Registro|Journal|Registro|लॉग|السجل|记录
+Latest|Último|Dernier|Último|ताज़ा|الأحدث|最新
+7-day average|Promedio de 7 días|Moyenne sur 7 jours|Média de 7 dias|7-दिन का औसत|متوسط 7 أيام|7 天平均
+Evidence-based basics, summarized. Not medical advice; check with a professional if you have injuries.|Lo básico respaldado por evidencia, resumido. No es consejo médico; consulta a un profesional si tienes lesiones.|Les bases fondées sur la science, résumées. Pas un avis médical ; consulte un professionnel en cas de blessure.|O básico baseado em evidências, resumido. Não é conselho médico; consulte um profissional se tiver lesões.|सबूत-आधारित बुनियादी बातें, संक्षेप में। यह मेडिकल सलाह नहीं है; चोट हो तो किसी विशेषज्ञ से पूछें।|أساسيات مبنية على الأدلة، باختصار. ليست نصيحة طبية؛ استشر مختصًا إن كانت لديك إصابات.|基于研究的要点摘要。非医疗建议；如有伤病请咨询专业人士。
+How many sets per week?|¿Cuántas series por semana?|Combien de séries par semaine ?|Quantas séries por semana?|हफ़्ते में कितने सेट?|كم مجموعة في الأسبوع؟|每周练多少组？
+Progressive overload: how to keep improving|Sobrecarga progresiva: cómo seguir mejorando|Surcharge progressive : comment continuer à progresser|Sobrecarga progressiva: como continuar evoluindo|प्रोग्रेसिव ओवरलोड: लगातार बेहतर कैसे हों|الحمل التدريجي: كيف تستمر في التحسن|渐进超负荷：如何持续进步
+Which split should I run?|¿Qué rutina debería seguir?|Quel programme suivre ?|Qual divisão devo seguir?|मुझे कौन-सा स्प्लिट करना चाहिए?|أي تقسيمة أتبع؟|我该练哪种分化？
+Plyometrics & sports training|Pliometría y entrenamiento deportivo|Pliométrie et entraînement sportif|Pliometria e treino esportivo|प्लायोमेट्रिक्स और खेल ट्रेनिंग|البليومترك والتدريب الرياضي|增强式与运动训练
+Time management: get more done in less time|Gestión del tiempo: haz más en menos tiempo|Gestion du temps : en faire plus en moins de temps|Gestão de tempo: faça mais em menos tempo|समय प्रबंधन: कम समय में ज़्यादा करें|إدارة الوقت: أنجز أكثر في وقت أقل|时间管理：用更少时间练更多
+Commercial gym tips|Consejos para el gimnasio|Conseils pour la salle|Dicas para academia|जिम के लिए टिप्स|نصائح للنادي الرياضي|健身房小贴士
+Smart shopping: home equipment|Compras inteligentes: equipo para casa|Achats malins : équipement maison|Compras inteligentes: equipamento para casa|समझदारी से खरीदारी: घर के उपकरण|التسوق الذكي: معدات المنزل|精明购物：家用器材
+Try something new|Prueba algo nuevo|Essaie quelque chose de nouveau|Experimente algo novo|कुछ नया आज़माएं|جرّب شيئًا جديدًا|试试新动作
+🔀 Shuffle|🔀 Mezclar|🔀 Mélanger|🔀 Embaralhar|🔀 शफ़ल|🔀 خلط|🔀 换一批
+▶ Demo|▶ Demo|▶ Démo|▶ Demo|▶ डेमो|▶ عرض|▶ 演示
+Send feedback|Enviar comentarios|Envoyer un avis|Enviar feedback|फ़ीडबैक भेजें|إرسال الملاحظات|发送反馈
+What kind of feedback?|¿Qué tipo de comentario?|Quel type d'avis ?|Que tipo de feedback?|किस तरह का फ़ीडबैक?|ما نوع الملاحظة؟|什么类型的反馈？
+💡 Idea|💡 Idea|💡 Idée|💡 Ideia|💡 आइडिया|💡 فكرة|💡 建议
+🐛 Something's broken|🐛 Algo no funciona|🐛 Quelque chose ne marche pas|🐛 Algo está quebrado|🐛 कुछ टूटा है|🐛 شيء لا يعمل|🐛 有东西坏了
+❤️ Something I like|❤️ Algo que me gusta|❤️ Quelque chose que j'aime|❤️ Algo que eu gosto|❤️ कुछ जो मुझे पसंद है|❤️ شيء أحبه|❤️ 我喜欢的地方
+🌐 Translation fix|🌐 Corregir traducción|🌐 Correction de traduction|🌐 Corrigir tradução|🌐 अनुवाद सुधार|🌐 تصحيح ترجمة|🌐 翻译修正
+💬 Other|💬 Otro|💬 Autre|💬 Outro|💬 अन्य|💬 أخرى|💬 其他
+How are you liking Jim?|¿Qué te parece Jim?|Comment trouves-tu Jim ?|O que está achando do Jim?|आपको Jim कैसा लग रहा है?|ما رأيك في جيم؟|你觉得 Jim 怎么样？
+Your message|Tu mensaje|Ton message|Sua mensagem|आपका संदेश|رسالتك|你的留言
+What happened, or what would you like to see?|¿Qué pasó o qué te gustaría ver?|Que s'est-il passé, ou qu'aimerais-tu voir ?|O que aconteceu ou o que você gostaria de ver?|क्या हुआ, या आप क्या देखना चाहेंगे?|ماذا حدث، أو ماذا تود أن ترى؟|发生了什么，或你希望看到什么？
+Name or email|Nombre o correo|Nom ou e-mail|Nome ou e-mail|नाम या ईमेल|الاسم أو البريد الإلكتروني|姓名或邮箱
+optional, only if you'd like a reply|opcional, solo si quieres respuesta|facultatif, seulement si tu veux une réponse|opcional, só se quiser resposta|वैकल्पिक, सिर्फ़ अगर जवाब चाहिए|اختياري، فقط إن أردت ردًا|可选，仅在需要回复时填写
+Jim also sends the app language, the screen you came from and whether you're on a phone or computer, so problems are easier to fix. Nothing from your workout log is included.|Jim también envía el idioma de la app, la pantalla de la que vienes y si usas teléfono u ordenador, para arreglar problemas más fácil. No se incluye nada de tu registro de entrenamientos.|Jim envoie aussi la langue de l'appli, l'écran d'où tu viens et si tu es sur téléphone ou ordinateur, pour corriger les problèmes plus facilement. Rien de ton journal d'entraînement n'est inclus.|O Jim também envia o idioma do app, a tela de onde você veio e se está no celular ou computador, para facilitar correções. Nada do seu registro de treinos é incluído.|Jim ऐप की भाषा, आप किस स्क्रीन से आए और फ़ोन या कंप्यूटर पर हैं, यह भी भेजता है ताकि समस्याएं आसानी से ठीक हों। आपके वर्कआउट लॉग से कुछ नहीं भेजा जाता।|يرسل جيم أيضًا لغة التطبيق والشاشة التي أتيت منها وما إذا كنت على هاتف أو حاسوب، لتسهيل إصلاح المشكلات. لا يُرسل شيء من سجل تمارينك.|Jim 还会发送应用语言、你来自哪个页面以及你使用手机还是电脑，方便修复问题。不包含任何训练记录。
+Your feedback|Tus comentarios|Tes avis|Seu feedback|आपका फ़ीडबैक|ملاحظاتك|你的反馈
+Feedback inbox|Bandeja de comentarios|Boîte de réception des avis|Caixa de feedback|फ़ीडबैक इनबॉक्स|صندوق الملاحظات|反馈收件箱
+Only you can see this: every message people have sent.|Solo tú ves esto: todos los mensajes que la gente ha enviado.|Toi seul vois ceci : tous les messages envoyés.|Só você vê isto: todas as mensagens enviadas.|यह सिर्फ़ आप देख सकते हैं: लोगों के भेजे सभी संदेश।|أنت وحدك ترى هذا: كل الرسائل التي أرسلها الناس.|仅你可见：所有人发送的消息。
+Sent|Enviado|Envoyé|Enviado|भेजा गया|أُرسلت|已发送
+Waiting to send|Pendiente de envío|En attente d'envoi|Aguardando envio|भेजने का इंतज़ार|بانتظار الإرسال|等待发送
+Write a message first|Escribe un mensaje primero|Écris d'abord un message|Escreva uma mensagem primeiro|पहले संदेश लिखें|اكتب رسالة أولًا|请先写下留言
+Thanks! Your feedback was sent to Jeremy.|¡Gracias! Tu comentario se envió a Jeremy.|Merci ! Ton avis a été envoyé à Jeremy.|Obrigado! Seu feedback foi enviado ao Jeremy.|धन्यवाद! आपका फ़ीडबैक Jeremy को भेज दिया गया।|شكرًا! أُرسلت ملاحظتك إلى جيريمي.|谢谢！你的反馈已发送给 Jeremy。
+Thanks! Saved on this device. Jim will send it to Jeremy as soon as it can.|¡Gracias! Guardado en este dispositivo. Jim lo enviará a Jeremy en cuanto pueda.|Merci ! Enregistré sur cet appareil. Jim l'enverra à Jeremy dès que possible.|Obrigado! Salvo neste dispositivo. O Jim vai enviar ao Jeremy assim que puder.|धन्यवाद! इस डिवाइस पर सेव किया। Jim इसे जल्द से जल्द Jeremy को भेजेगा।|شكرًا! حُفظت على هذا الجهاز. سيرسلها جيم إلى جيريمي في أقرب وقت.|谢谢！已保存在此设备，Jim 会尽快发送给 Jeremy。
+🌐 Language|🌐 Idioma|🌐 Langue|🌐 Idioma|🌐 भाषा|🌐 اللغة|🌐 语言
+Choose the language Jim uses. Exercise names stay in English so they match MuscleWiki.|Elige el idioma de Jim. Los nombres de los ejercicios quedan en inglés para coincidir con MuscleWiki.|Choisis la langue de Jim. Les noms d'exercices restent en anglais pour correspondre à MuscleWiki.|Escolha o idioma do Jim. Os nomes dos exercícios ficam em inglês para combinar com o MuscleWiki.|Jim की भाषा चुनें। एक्सरसाइज़ के नाम अंग्रेज़ी में रहते हैं ताकि MuscleWiki से मेल खाएं।|اختر لغة جيم. تبقى أسماء التمارين بالإنجليزية لتطابق MuscleWiki.|选择 Jim 的语言。动作名称保留英文，以便与 MuscleWiki 对应。
+I'm|Soy|Je suis|Eu sou o|मैं|أنا|我是
+, your personal coach. I'll plan your week, tell you what weight to lift next time, and keep an eye on every muscle group.|, tu entrenador personal. Planificaré tu semana, te diré qué peso levantar la próxima vez y vigilaré cada grupo muscular.|, ton coach personnel. Je planifie ta semaine, je te dis quel poids soulever la prochaine fois et je surveille chaque groupe musculaire.|, seu treinador pessoal. Vou planejar sua semana, dizer que peso levantar na próxima vez e acompanhar cada grupo muscular.|, आपका पर्सनल कोच। मैं आपका हफ़्ता प्लान करूंगा, बताऊंगा कि अगली बार कितना वज़न उठाना है, और हर मांसपेशी समूह पर नज़र रखूंगा।|، مدربك الشخصي. سأخطط أسبوعك، وأخبرك بالوزن الذي سترفعه في المرة القادمة، وأتابع كل مجموعة عضلية.|，你的私人教练。我会安排你的一周，告诉你下次该举多重，并关注每个肌群。
+Let's start: tell me where you train (top of the screen), then pick a split and I'll build your sessions.|Empecemos: dime dónde entrenas (arriba de la pantalla), elige una rutina y armaré tus sesiones.|C'est parti : dis-moi où tu t'entraînes (en haut de l'écran), puis choisis un programme et je crée tes séances.|Vamos começar: diga onde você treina (no topo da tela), escolha uma divisão e eu monto suas sessões.|चलिए शुरू करें: बताएं आप कहां ट्रेन करते हैं (स्क्रीन के ऊपर), फिर स्प्लिट चुनें और मैं आपके सेशन बना दूंगा।|لنبدأ: أخبرني أين تتمرن (أعلى الشاشة)، ثم اختر تقسيمة وسأبني جلساتك.|开始吧：告诉我你在哪里训练（屏幕顶部），然后选择一个分化，我来为你安排训练课。
+Good morning|Buenos días|Bonjour|Bom dia|सुप्रभात|صباح الخير|早上好
+Good afternoon|Buenas tardes|Bon après-midi|Boa tarde|नमस्कार|مساء الخير|下午好
+Good evening|Buenas noches|Bonsoir|Boa noite|शुभ संध्या|مساء الخير|晚上好`;
+const I18N={}; I18N_RAW.split("\n").forEach(l=>{ const p=l.split("|"); I18N[p[0].trim()]=p.slice(1); });
+const I18N_P=[
+ [/^(Good morning|Good afternoon|Good evening)([\s\S]*)$/, m=>{ const g=I18N[m[1]]; return g?g[LIX[LANG]]+m[2]:null; }],
+ [/^Hey (.+), let's train$/,["Hola $1, a entrenar","Salut $1, on s'entraîne","E aí $1, bora treinar","नमस्ते $1, चलो ट्रेन करें","أهلًا $1، لنتمرّن","嗨 $1，开练吧"]],
+ [/^Weight \((kg|lb)\)$/,["Peso ($1)","Poids ($1)","Peso ($1)","वज़न ($1)","الوزن ($1)","重量（$1）"]],
+ [/^Rest (\d+:\d\d)$/,["Descanso $1","Repos $1","Descanso $1","आराम $1","راحة $1","休息 $1"]],
+ [/^(\d+) exercises$/,["$1 ejercicios","$1 exercices","$1 exercícios","$1 एक्सरसाइज़","$1 تمرين","$1 个动作"]],
+ [/^target (\d+)–(\d+)$/,["objetivo $1–$2","cible $1–$2","meta $1–$2","लक्ष्य $1–$2","الهدف $1–$2","目标 $1–$2"]],
+ [/^([\d.]+) sets$/,["$1 series","$1 séries","$1 séries","$1 सेट","$1 مجموعات","$1 组"]],
+ [/^([\d.]+) below target$/,["$1 bajo el objetivo","$1 sous la cible","$1 abaixo da meta","लक्ष्य से $1 कम","$1 أقل من الهدف","比目标少 $1"]],
+ [/^▲ above (\d+)$/,["▲ más de $1","▲ au-dessus de $1","▲ acima de $1","▲ $1 से ऊपर","▲ أعلى من $1","▲ 超过 $1"]],
+ [/^Last (\d+) weeks$/,["Últimas $1 semanas","$1 dernières semaines","Últimas $1 semanas","पिछले $1 हफ़्ते","آخر $1 أسابيع","最近 $1 周"]],
+ [/^(kg|lb) lifted$/,["$1 levantados","$1 soulevés","$1 levantados","$1 उठाया","$1 مرفوعة","已举起 $1"]],
+ [/^(.+) added to today's workout$/,["$1 añadido al entrenamiento de hoy","$1 ajouté à la séance du jour","$1 adicionado ao treino de hoje","$1 आज के वर्कआउट में जोड़ा गया","أُضيف $1 إلى تمرين اليوم","已将 $1 加入今日训练"]],
+ [/^Setup: (.+)$/,["Lugar: $1","Lieu : $1","Local: $1","सेटअप: $1","المكان: $1","训练地点：$1"]]
+];
+let LANG="en";
+function trCore(core){ const row=I18N[core]; if(row&&row[LIX[LANG]]) return row[LIX[LANG]]; for(const [re,tp] of I18N_P){ const m=core.match(re); if(m){ if(typeof tp==="function") return tp(m); return core.replace(re,tp[LIX[LANG]]); } } return null; }
+// translate a whole string, keeping surrounding spaces (also used for typed strings like toasts)
+function trText(s){ if(LANG==="en"||!s) return s; const m=s.match(/^(\s*)([\s\S]*?)(\s*)$/); if(!m[2]) return s; const t=trCore(m[2]); return t==null?s:m[1]+t+m[3]; }
+const I18N_SKIP="script,style,textarea,[data-noi18n]";
+const I18N_TX=new WeakMap();
+function i18nText(n){ const p=n.parentElement; if(!p||p.closest(I18N_SKIP)) return; const cur=n.nodeValue; if(!cur||!cur.trim()) return; let o=I18N_TX.get(n); if(!o||cur!==o.tr) o={src:cur}; o.tr=trText(o.src); I18N_TX.set(n,o); if(cur!==o.tr) n.nodeValue=o.tr; }
+const I18N_ATTRS=["placeholder","aria-label","title"];
+function i18nAttrs(el){ if(el.closest(I18N_SKIP)) return; let s=null; for(const a of I18N_ATTRS){ if(!el.hasAttribute(a)) continue; s=s||el.__i18n||(el.__i18n={}); const cur=el.getAttribute(a); let o=s[a]; if(!o||cur!==o.tr) o=s[a]={src:cur}; o.tr=trText(o.src); if(cur!==o.tr) el.setAttribute(a,o.tr); } }
+function i18nWalk(root){
+  if(!root) return; if(root.nodeType===3){ i18nText(root); return; } if(root.nodeType!==1||root.matches(I18N_SKIP)) return;
+  i18nAttrs(root);
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT,{acceptNode:n=>n.nodeType===1&&n.matches(I18N_SKIP)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  let n; while((n=w.nextNode())){ if(n.nodeType===3) i18nText(n); else i18nAttrs(n); }
+}
+const i18nObs=new MutationObserver(ms=>{ if(LANG==="en") return; for(const m of ms){ if(m.type==="childList") m.addedNodes.forEach(i18nWalk); else if(m.type==="characterData") i18nText(m.target); else if(m.target.nodeType===1) i18nAttrs(m.target); } });
+i18nObs.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:I18N_ATTRS});
+const I18N_FONTS={hi:"Noto+Sans+Devanagari:wght@400;600;700",ar:"Noto+Sans+Arabic:wght@400;600;700",zh:"Noto+Sans+SC:wght@400;600;700"};
+function renderLangPickers(){
+  const sel=$("#langSel"); if(sel){ sel.innerHTML=LANGS.map(([k,v])=>`<option value="${k}" ${k===LANG?"selected":""}>🌐 ${v}</option>`).join(""); sel.value=LANG; }
+  const ch=$("#langChips"); if(ch) ch.innerHTML=LANGS.map(([k,v])=>`<button class="chip ${k===LANG?"on":""}" data-lang="${k}" aria-pressed="${k===LANG}">${k===LANG?'<span class="ck">✓</span>':""}${v}</button>`).join("");
+}
+function setLang(l,quiet){
+  if(!LANGS.some(x=>x[0]===l)) l="en"; LANG=l; ls.set("jim.lang",l);
+  const h=document.documentElement; h.lang=l; h.dir=l==="ar"?"rtl":"ltr";
+  let fl=document.getElementById("i18nFont");
+  if(I18N_FONTS[l]){ if(!fl){ fl=document.createElement("link"); fl.id="i18nFont"; fl.rel="stylesheet"; document.head.appendChild(fl); } const href="https://fonts.googleapis.com/css2?family="+I18N_FONTS[l]+"&display=swap"; if(fl.href!==href) fl.href=href; }
+  renderLangPickers();
+  i18nWalk(document.body);
+  if(!quiet) toast(LANGS.find(x=>x[0]===l)[1]);
+}
+$("#langSel").onchange=e=>setLang(e.target.value);
+$("#langChips").addEventListener("click",e=>{ const b=e.target.closest("[data-lang]"); if(b) setLang(b.dataset.lang); });
+{ let saved=ls.get("jim.lang",null);
+  if(!saved){ const nav=(navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language||"en"]).map(x=>String(x).slice(0,2).toLowerCase()); saved=nav.find(c=>LANGS.some(x=>x[0]===c))||"en"; }
+  setLang(saved,true); }
+
+/* ================= FEEDBACK ================= */
+const FB_KEY="jim.feedback";
+const FB_TYPES={idea:"💡 Idea",bug:"🐛 Something's broken",love:"❤️ Something I like",lang:"🌐 Translation fix",other:"💬 Other"};
+let fbType="idea", fbRate=0, fbDb=null, fbUid=null, fbTried=false, fbFrom="home", fbInboxOn=false;
+const fbLocal=()=>ls.get(FB_KEY,[])||[];
+async function fbConn(){
+  if(fbTried) return fbDb; fbTried=true;
+  try{ if(!window.claude||!window.claude.use) return null; const [db,user]=await Promise.all([window.claude.use("db"),window.claude.use("user")]); if(!db||!user) return null; const id=await user.id(); if(!id) return null; fbDb=db; fbUid=id; }catch(e){ fbDb=null; }
+  return fbDb;
+}
+// each person has one feedback document (feedback/<their id>) holding all their messages; only Jeremy can read them all
+async function fbFlush(){
+  const L=fbLocal(); if(!L.some(x=>!x.sent)) return false;
+  if(window.JIM_WEB&&window.JIM_WEB.sendFeedback){ // website: feedback goes to the Supabase table jim_feedback
+    let any=false; for(const x of L){ if(x.sent) continue; try{ const {sent,...r}=x; await window.JIM_WEB.sendFeedback(r); x.sent=true; any=true; }catch(e){ break; } }
+    ls.set(FB_KEY,L); return any; }
+  const db=await fbConn(); if(!db) return false;
+  try{
+    const ref=db.doc("feedback/"+fbUid); let prev=[];
+    try{ const s=await ref.get(); const d=s&&(typeof s.data==="function"?s.data():s); if(d&&Array.isArray(d.items)) prev=d.items; }catch(e){}
+    const byId=new Map(prev.map(x=>[x.id,x])); L.forEach(({sent,...r})=>byId.set(r.id,r));
+    const all=[...byId.values()].sort((a,b)=>a.at-b.at).slice(-100);
+    await ref.set({user:fbUid,updatedAt:Date.now(),items:all});
+    L.forEach(x=>x.sent=true); ls.set(FB_KEY,L); return true;
+  }catch(e){ return false; }
+}
+function fbWhen(t){ try{ return new Date(t).toLocaleDateString(LANG,{month:"short",day:"numeric",year:"numeric"}); }catch(e){ return new Date(t).toLocaleDateString(); } }
+function fbStarsTxt(r){ return r?"★".repeat(r)+"☆".repeat(5-r):""; }
+function renderFeedback(){
+  $$("#fbType [data-fbt]").forEach(b=>b.classList.toggle("on",b.dataset.fbt===fbType));
+  $$("#fbStars [data-fbr]").forEach(b=>{ b.classList.toggle("on",+b.dataset.fbr<=fbRate); b.setAttribute("aria-pressed",String(+b.dataset.fbr===fbRate)); });
+  const L=fbLocal().slice().reverse();
+  $("#fbPast").style.display=L.length?"":"none";
+  $("#fbList").innerHTML=L.map(x=>`<div class="fb-item"><div class="fm"><span class="badge">${esc(FB_TYPES[x.type]||x.type)}</span><span>${esc(fbWhen(x.at))}</span>${x.rating?`<span style="color:#f5a623">${fbStarsTxt(x.rating)}</span>`:""}<span class="badge ${x.sent?"star":""}">${x.sent?"Sent":"Waiting to send"}</span></div><div class="fx">${esc(x.msg)}</div></div>`).join("");
+  fbFlush().then(ok=>{ if(ok&&currentTab==="feedback") renderFeedback(); });
+  fbInbox();
+}
+async function fbInbox(){
+  if(window.JIM_WEB) return; // website: read feedback in the Supabase dashboard (table jim_feedback)
+  const db=await fbConn(); if(!db||fbInboxOn) return; fbInboxOn=true;
+  try{ db.collection("feedback").onSnapshot(snap=>{
+      const rows=snap.docs.map(d=>d.data()).filter(Boolean).flatMap(d=>(d.items||[]).map(i=>({...i,user:d.user}))).sort((a,b)=>b.at-a.at);
+      $("#fbInbox").style.display="";
+      $("#fbInboxList").innerHTML=rows.length?rows.map(x=>`<div class="fb-item"><div class="fm"><span class="badge">${esc(FB_TYPES[x.type]||x.type)}</span><span>${esc(fbWhen(x.at))}</span>${x.rating?`<span style="color:#f5a623">${fbStarsTxt(+x.rating||0)}</span>`:""}${x.contact?`<b>${esc(x.contact)}</b>`:""}<span>${esc([x.lang,x.screen,x.device].filter(Boolean).join(" · "))}</span></div><div class="fx">${esc(x.msg)}</div></div>`).join(""):`<div class="empty" style="padding:12px"><b>No feedback yet</b>Messages people send will show up here.</div>`;
+    },()=>{ $("#fbInbox").style.display="none"; });
+  }catch(e){}
+}
+$("#fbType").addEventListener("click",e=>{ const b=e.target.closest("[data-fbt]"); if(!b) return; fbType=b.dataset.fbt; renderFeedback(); });
+$("#fbStars").addEventListener("click",e=>{ const b=e.target.closest("[data-fbr]"); if(!b) return; const r=+b.dataset.fbr; fbRate=fbRate===r?0:r; renderFeedback(); });
+$("#fbSend").onclick=async()=>{
+  const msg=$("#fbMsg").value.trim(); if(!msg){ toast("Write a message first"); $("#fbMsg").focus(); return; }
+  if(DEMO_ONLY){ toast("View-only example: changes can't be saved"); return; }
+  const rec={id:uid(),at:Date.now(),type:fbType,rating:fbRate||null,msg:msg.slice(0,2000),contact:$("#fbContact").value.trim().slice(0,120),lang:LANG,screen:fbFrom,device:matchMedia("(pointer:coarse)").matches?"phone/tablet":"computer",sent:false};
+  const L=fbLocal(); L.push(rec); ls.set(FB_KEY,L);
+  const btn=$("#fbSend"); btn.disabled=true;
+  const ok=await fbFlush(); btn.disabled=false;
+  $("#fbMsg").value=""; fbRate=0;
+  $("#fbStatus").textContent=ok?"Thanks! Your feedback was sent to Jeremy.":"Thanks! Saved on this device. Jim will send it to Jeremy as soon as it can.";
+  renderFeedback();
+};
+setTimeout(()=>{ fbFlush(); },4000);
 
 rebuildLib(items); loadDraft(); renderUnit(); renderDatalists(); renderLog(); applyTheme();
 if(DEMO_ONLY){ document.body.classList.add("ro"); $("#demoBar span").innerHTML="👀 <b>View-only example</b> of Jim, your personal coach, with a sample user, Eric. Look around: History, weeks, charts, coach, plan, library and guide."; enterDemo(); }

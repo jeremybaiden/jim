@@ -13,6 +13,8 @@ A gym tracker that coaches you: log workouts, weights and reps, and Jim tells yo
 - **Exercise library**: 349 exercises with main muscles and subgroups (e.g. triceps medial head), multi-select filters, and your own custom exercises. Exercise information courtesy of [MuscleWiki.com](https://musclewiki.com/).
 - **Body weight** tracker with a 7-day average, and private **progress photos** with side-by-side compare.
 - **Accounts**: sign in with Google or an emailed link to sync across devices, or use it as a guest (data stays in your browser and moves into your account when you sign in).
+- **7 languages**: English, Español, Français, Português, हिन्दी, العربية (right-to-left) and 中文 (Mandarin). Picks your browser language on the first visit; change it from the 🌐 menu or Settings. Exercise names stay in English to match MuscleWiki.
+- **Feedback** (More → Feedback): ideas, bug reports and translation fixes, with an optional rating. Works for guests too.
 - Light and dark mode, phone and desktop layouts, and a demo tour with a sample user.
 
 ## How it's built
