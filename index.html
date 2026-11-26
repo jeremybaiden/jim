@@ -344,9 +344,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;ma
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.02em}
 .brand{gap:8px}.logo{height:46px;width:auto;border-radius:12px;display:block}
 html:not(.dk) .logo-d,html.dk .logo-l{display:none!important}
-/* main logo: always the white version (brighter), in both themes */
-img.logo.logo-d{display:none!important}html.dk img.logo.logo-l{display:block!important}
-.logo-l{box-shadow:0 0 0 1px var(--line)}
+/* logo follows the theme: black background in dark mode, white background in light mode */
+.logo-l,.logo-d{box-shadow:0 0 0 1px var(--line)}
 .tag{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0}
 .brand-t{display:flex;flex-direction:column;line-height:1.05}.brand-t small{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0}
 .side-brand{display:none}
@@ -2781,7 +2780,7 @@ function applyTheme(acc,a11y){ if(theme==="auto") delete document.documentElemen
     const cb=!!(a11y||A11Y()).cb;
     if(cb){ st.setProperty("--s1",dark?"#3987e5":"#2a78d6"); st.setProperty("--s2",dark?"#d95926":"#eb6834"); st.setProperty("--good",dark?"#3987e5":"#1f5fae"); st.setProperty("--danger",dark?"#f0883e":"#b54708"); st.setProperty("--zone",dark?"#1d2b3d":"#e3eefb"); }
     else { ["--good","--danger","--zone"].forEach(v=>st.removeProperty(v)); } }
-  $("#themeBtn").innerHTML=THEME_ICON[theme]; $("#themeBtn").title=(theme==="dark"?"Dark mode · tap for light":"Light mode · tap for dark"); $("#themeBtn").setAttribute("aria-label",theme==="dark"?"Dark mode on. Switch to light mode":"Light mode on. Switch to dark mode");
+  /* the button shows the mode you switch to: a moon in light mode, a sun in dark mode */ $("#themeBtn").innerHTML=THEME_ICON[theme==="dark"?"light":"dark"]; $("#themeBtn").title=(theme==="dark"?"Switch to light mode":"Switch to dark mode"); $("#themeBtn").setAttribute("aria-label",theme==="dark"?"Switch to light mode":"Switch to dark mode");
   if(currentTab==="progress") renderProgress(); }
 $("#themeBtn").onclick=()=>{ theme=theme==="dark"?"light":"dark"; ls.set("liftlog.theme",theme); applyTheme(); };
 
@@ -3443,7 +3442,9 @@ Let's start: tell me where you train, what equipment you have and how long your 
 Set up and pick your split|Configura y elige tu rutina|Configure et choisis ton programme|Configure e escolha sua divisão|सेटअप करें और स्प्लिट चुनें|اضبط إعداداتك واختر نظامك|设置并选择训练分化
 Where you train, your equipment and your time, then full body, upper/lower, push/pull/legs, sports and more.|Dónde entrenas, tu equipo y tu tiempo; luego cuerpo completo, torso/pierna, empuje/tirón/pierna, deportes y más.|Où tu t'entraînes, ton matériel et ton temps, puis full body, haut/bas, push/pull/legs, sport et plus.|Onde você treina, seu equipamento e seu tempo; depois corpo inteiro, superior/inferior, empurrar/puxar/pernas, esportes e mais.|आप कहाँ ट्रेन करते हैं, आपका सामान और समय, फिर फुल बॉडी, अपर/लोअर, पुश/पुल/लेग्स, स्पोर्ट्स और भी।|مكان تمرينك ومعداتك ووقتك، ثم الجسم الكامل، علوي/سفلي، دفع/سحب/أرجل، الرياضات والمزيد.|训练地点、器械和时间，然后是全身、上下肢、推/拉/腿、运动专项等。
 Set up my plan →|Configurar mi plan →|Configurer mon plan →|Configurar meu plano →|मेरा प्लान सेट करें →|اضبط خطتي ←|设置我的计划 →
-Exit Jemima's example to change your equipment and time|Sal del ejemplo de Jemima para cambiar tu equipo y tiempo|Quitte l'exemple de Jemima pour changer ton matériel et ton temps|Saia do exemplo da Jemima para mudar seu equipamento e tempo|अपना सामान और समय बदलने के लिए Jemima का उदाहरण बंद करें|اخرج من مثال Jemima لتغيير معداتك ووقتك|退出 Jemima 的示例后才能更改器械和时间`;
+Exit Jemima's example to change your equipment and time|Sal del ejemplo de Jemima para cambiar tu equipo y tiempo|Quitte l'exemple de Jemima pour changer ton matériel et ton temps|Saia do exemplo da Jemima para mudar seu equipamento e tempo|अपना सामान और समय बदलने के लिए Jemima का उदाहरण बंद करें|اخرج من مثال Jemima لتغيير معداتك ووقتك|退出 Jemima 的示例后才能更改器械和时间
+Switch to dark mode|Cambiar a modo oscuro|Passer en mode sombre|Mudar para o modo escuro|डार्क मोड पर जाएं|التبديل إلى الوضع الداكن|切换到深色模式
+Switch to light mode|Cambiar a modo claro|Passer en mode clair|Mudar para o modo claro|लाइट मोड पर जाएं|التبديل إلى الوضع الفاتح|切换到浅色模式`;
 const I18N={}; I18N_RAW.split("\n").forEach(l=>{ const p=l.split("|"); I18N[p[0].trim()]=p.slice(1); });
 const I18N_P=[
  [/^(Good morning|Good afternoon|Good evening)([\s\S]*)$/, m=>{ const g=I18N[m[1]]; return g?g[LIX[LANG]]+m[2]:null; }],
