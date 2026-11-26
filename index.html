@@ -13,6 +13,106 @@
 <meta property="og:description" content="Track workouts, weights and reps. Jim tells you what to lift next time.">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
+// First-visit intro and "add to home screen" help. Separate from the sign-in layer so they
+// still work when the sign-in library can't load (offline, blocked).
+(function () {
+  "use strict";
+  var lsSet = function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} };
+  var lsGet = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  // ---------- first-visit intro (like Auntie Ceci's) and "add to home screen" help ----------
+  var INTRO_SEEN = "jim.introSeen";
+  var isStandalone = function () { try { return navigator.standalone === true || matchMedia("(display-mode: standalone)").matches; } catch (e) { return false; } };
+  var platform = function () { var u = navigator.userAgent || ""; if (/iPhone|iPad|iPod/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1)) return "ios"; if (/Android/.test(u)) return "android"; return "other"; };
+  var installEvt = null;
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); installEvt = e; var b = document.getElementById("a2Install"); if (b) b.style.display = ""; });
+  var css2 = '.ji-bg{position:fixed;inset:0;z-index:210;background:var(--bg,#111);overflow:auto;-webkit-overflow-scrolling:touch;padding:calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));display:flex;justify-content:center}' +
+    '.ji{width:100%;max-width:420px;min-height:100%;display:flex;flex-direction:column;color:var(--text)}' +
+    '.ji-top{display:flex;justify-content:center;margin:4px 0 14px}.ji-top .logo{height:76px;width:auto;border-radius:16px;display:block}' +
+    '.ji-lbl{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}' +
+    '.ji-langs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}.ji-langs button{padding:6px 11px;border-radius:20px;border:1px solid var(--line);background:var(--surface);color:var(--text-2);font:inherit;font-size:13px;cursor:pointer}.ji-langs button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--text);font-weight:700}' +
+    '.ji-emoji{font-size:56px;line-height:1;margin:6px 0 16px}.ji h1{font-size:26px;letter-spacing:-.02em;line-height:1.2;margin:0 0 10px}.ji p{color:var(--text-2);font-size:15.5px;line-height:1.55;margin:0}' +
+    '.ji-dots{display:flex;gap:6px;justify-content:center;margin:26px 0 16px}.ji-dots i{width:7px;height:7px;border-radius:4px;background:var(--line);transition:width .2s}.ji-dots i.on{width:20px;background:var(--accent)}' +
+    '.ji-go{width:100%;padding:14px 16px;border-radius:12px;border:0;background:var(--accent);color:#fff;font:inherit;font-weight:700;font-size:15.5px;cursor:pointer}' +
+    '.ji-sub{display:flex;justify-content:space-between;margin-top:8px}.ji-sub button{background:none;border:0;color:var(--muted);font:inherit;font-size:14px;cursor:pointer;padding:8px}' +
+    '.ji-push{flex:1}' +
+    '.a2-tabs{display:flex;gap:6px;background:var(--surface-2);border-radius:12px;padding:4px;margin:16px 0 12px}.a2-tabs button{flex:1;border:0;background:none;border-radius:9px;padding:8px;font:inherit;font-weight:700;font-size:14px;color:var(--text-2);cursor:pointer}.a2-tabs button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}' +
+    '.a2-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;text-align:start}.a2-steps li{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.45}' +
+    '.a2-steps b{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px}' +
+    '.a2-note{font-size:13.5px;color:var(--muted);margin-top:12px;line-height:1.5}.a2-done{background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-weight:600;margin-top:16px}';
+  function addCss2() { if (!document.getElementById("jiCss")) { var st = document.createElement("style"); st.id = "jiCss"; st.textContent = css2; document.head.appendChild(st); } }
+  var SHARE_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
+  var A2_STEPS = {
+    ios: ["Open this page in Safari.", "Tap the Share button at the bottom of the screen. " + SHARE_ICON, "Scroll down and tap Add to Home Screen, then tap Add."],
+    android: ["Open this page in Chrome.", "Tap the ⋮ menu at the top right.", "Tap Add to Home screen or Install app, then tap Add."]
+  };
+  // the steps block, shared by the intro and the More screen
+  function a2hsHtml() {
+    if (isStandalone()) return '<div class="a2-done">✓ <span>Jim is already on your home screen.</span></div>';
+    var p = platform() === "android" ? "android" : "ios";
+    return '<div class="a2-tabs" role="tablist"><button data-a2="ios" class="' + (p === "ios" ? "on" : "") + '">iPhone</button><button data-a2="android" class="' + (p === "android" ? "on" : "") + '">Android</button></div>' +
+      '<ol class="a2-steps" id="a2Steps"></ol>' +
+      '<button class="ji-go" id="a2Install" style="margin-top:12px;' + (installEvt ? "" : "display:none") + '">Install Jim</button>' +
+      '<div class="a2-note">' + (platform() === "other" ? "On a computer? Open jeremybaiden.github.io/jim on your phone and follow these steps." : "Jim then opens full screen from its own icon, just like an app.") + '</div>';
+  }
+  function wireA2(root) {
+    var draw = function (p) {
+      var ol = root.querySelector("#a2Steps"); if (!ol) return;
+      ol.innerHTML = A2_STEPS[p].map(function (s, i) { return '<li><b>' + (i + 1) + '</b><span>' + s + '</span></li>'; }).join("");
+      Array.prototype.forEach.call(root.querySelectorAll("[data-a2]"), function (b) { b.classList.toggle("on", b.getAttribute("data-a2") === p); });
+    };
+    Array.prototype.forEach.call(root.querySelectorAll("[data-a2]"), function (b) { b.onclick = function () { draw(b.getAttribute("data-a2")); }; });
+    var on = root.querySelector("[data-a2].on"); if (on) draw(on.getAttribute("data-a2"));
+    var ib = root.querySelector("#a2Install");
+    if (ib) ib.onclick = async function () { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; ib.style.display = "none"; };
+  }
+  function logoHtml() { return Array.from(document.querySelectorAll(".brand .logo")).map(function (i) { return i.outerHTML; }).join(""); }
+  function langChips() {
+    var J = window.JIM_LANG; if (!J) return "";
+    return '<div class="ji-lbl">Language</div><div class="ji-langs">' + J.list.map(function (l) { return '<button data-jilang="' + l[0] + '" class="' + (l[0] === J.get() ? "on" : "") + '" data-noi18n>' + l[1] + '</button>'; }).join("") + '</div>';
+  }
+  var SLIDES = [
+    { e: "💪", t: "Meet Jim, your personal coach", d: "Jim plans your week, tells you what weight to lift next, and keeps an eye on every muscle group." },
+    { e: "📝", t: "Log a workout in seconds", d: "Start a session and Jim fills in the weights to use. A rest timer runs between sets, and every new PR gets celebrated." },
+    { e: "📈", t: "See the work pay off", d: "Charts for your strength and weekly sets per muscle, plus body weight and private progress photos." },
+    { e: "🗓️", t: "Built around you", d: "Pick a split and where you train. Jim builds your sessions from 349+ exercises, with exercise info courtesy of MuscleWiki." },
+    { e: "📲", t: "Add Jim to your home screen", d: "Open Jim like an app, full screen, in one tap.", a2: true }
+  ];
+  function showIntro(done) {
+    addCss2();
+    var slides = SLIDES.filter(function (s) { return !(s.a2 && isStandalone()); });
+    var i = 0, bg = document.createElement("div"); bg.className = "ji-bg"; bg.id = "jiBg";
+    bg.setAttribute("role", "dialog"); bg.setAttribute("aria-modal", "true"); bg.setAttribute("aria-label", "Welcome to Jim");
+    var finish = function () { lsSet(INTRO_SEEN, "1"); bg.remove(); done(); };
+    var draw = function () {
+      var s = slides[i], last = i === slides.length - 1;
+      bg.innerHTML = '<div class="ji"><div class="ji-top">' + logoHtml() + '</div>' + (i === 0 ? langChips() : "") +
+        '<div class="ji-emoji" aria-hidden="true">' + s.e + '</div><h1>' + s.t + '</h1><p>' + s.d + '</p>' + (s.a2 ? a2hsHtml() : "") +
+        '<div class="ji-push"></div><div class="ji-dots" aria-label="' + (i + 1) + ' / ' + slides.length + '">' + slides.map(function (_, k) { return '<i class="' + (k === i ? "on" : "") + '"></i>'; }).join("") + '</div>' +
+        '<button class="ji-go" id="jiNext">' + (last ? "Get started" : "Next") + '</button>' +
+        '<div class="ji-sub"><button id="jiBack" style="' + (i ? "" : "visibility:hidden") + '">Back</button><button id="jiSkip">Skip</button></div></div>';
+      if (s.a2) wireA2(bg);
+      bg.querySelector("#jiNext").onclick = function () { if (last) finish(); else { i++; draw(); bg.scrollTop = 0; } };
+      bg.querySelector("#jiBack").onclick = function () { if (i) { i--; draw(); bg.scrollTop = 0; } };
+      bg.querySelector("#jiSkip").onclick = finish;
+      Array.prototype.forEach.call(bg.querySelectorAll("[data-jilang]"), function (b) { b.onclick = function () { window.JIM_LANG.set(b.getAttribute("data-jilang"), true); draw(); }; });
+    };
+    draw(); document.body.appendChild(bg);
+  }
+  // "Add to home screen" from the More screen
+  function showA2HS() {
+    addCss2(); if (document.getElementById("a2Bg")) return;
+    var bg = document.createElement("div"); bg.className = "ji-bg"; bg.id = "a2Bg"; bg.setAttribute("role", "dialog"); bg.setAttribute("aria-modal", "true"); bg.setAttribute("aria-label", "Add Jim to your home screen");
+    bg.innerHTML = '<div class="ji"><div class="ji-top">' + logoHtml() + '</div><div class="ji-emoji" aria-hidden="true">📲</div><h1>Add Jim to your home screen</h1><p>Open Jim like an app, full screen, in one tap.</p>' + a2hsHtml() +
+      '<div class="ji-push"></div><button class="ji-go" id="a2Close" style="margin-top:22px">Close</button></div>';
+    document.body.appendChild(bg); wireA2(bg);
+    bg.querySelector("#a2Close").onclick = function () { bg.remove(); };
+  }
+
+  window.JIM_INTRO = { show: showIntro, seen: function () { return !!lsGet(INTRO_SEEN); }, homeScreen: showA2HS };
+  document.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest('[data-jimweb="a2hs"]'); if (b) showA2HS(); });
+})();
+</script>
+<script>
 // Jim website: accounts and cloud saving through Supabase.
 // Provides the same small storage API the app uses inside Claude (db, user, assets),
 // so the app code is shared. Guests keep everything in this browser.
@@ -31,6 +131,7 @@
   if (!window.supabase || !window.supabase.createClient) {
     // Library didn't load (offline / blocked): run as a guest on this device.
     window.claude = { use: async function () { return null; } };
+    document.addEventListener("DOMContentLoaded", function () { var I = window.JIM_INTRO; if (I && !I.seen()) I.show(function () {}); });
     return;
   }
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -173,96 +274,6 @@
     document.getElementById("jwGuest").onclick = function () { lsSet(GUEST, "1"); bg.remove(); };
   }
 
-  // ---------- first-visit intro (like Auntie Ceci's) and "add to home screen" help ----------
-  var INTRO_SEEN = "jim.introSeen";
-  var isStandalone = function () { try { return navigator.standalone === true || matchMedia("(display-mode: standalone)").matches; } catch (e) { return false; } };
-  var platform = function () { var u = navigator.userAgent || ""; if (/iPhone|iPad|iPod/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1)) return "ios"; if (/Android/.test(u)) return "android"; return "other"; };
-  var installEvt = null;
-  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); installEvt = e; var b = document.getElementById("a2Install"); if (b) b.style.display = ""; });
-  var css2 = '.ji-bg{position:fixed;inset:0;z-index:210;background:var(--bg,#111);overflow:auto;-webkit-overflow-scrolling:touch;padding:calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));display:flex;justify-content:center}' +
-    '.ji{width:100%;max-width:420px;min-height:100%;display:flex;flex-direction:column;color:var(--text)}' +
-    '.ji-top{display:flex;justify-content:center;margin:4px 0 14px}.ji-top .logo{height:76px;width:auto;border-radius:16px;display:block}' +
-    '.ji-lbl{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}' +
-    '.ji-langs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}.ji-langs button{padding:6px 11px;border-radius:20px;border:1px solid var(--line);background:var(--surface);color:var(--text-2);font:inherit;font-size:13px;cursor:pointer}.ji-langs button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--text);font-weight:700}' +
-    '.ji-emoji{font-size:56px;line-height:1;margin:6px 0 16px}.ji h1{font-size:26px;letter-spacing:-.02em;line-height:1.2;margin:0 0 10px}.ji p{color:var(--text-2);font-size:15.5px;line-height:1.55;margin:0}' +
-    '.ji-dots{display:flex;gap:6px;justify-content:center;margin:26px 0 16px}.ji-dots i{width:7px;height:7px;border-radius:4px;background:var(--line);transition:width .2s}.ji-dots i.on{width:20px;background:var(--accent)}' +
-    '.ji-go{width:100%;padding:14px 16px;border-radius:12px;border:0;background:var(--accent);color:#fff;font:inherit;font-weight:700;font-size:15.5px;cursor:pointer}' +
-    '.ji-sub{display:flex;justify-content:space-between;margin-top:8px}.ji-sub button{background:none;border:0;color:var(--muted);font:inherit;font-size:14px;cursor:pointer;padding:8px}' +
-    '.ji-push{flex:1}' +
-    '.a2-tabs{display:flex;gap:6px;background:var(--surface-2);border-radius:12px;padding:4px;margin:16px 0 12px}.a2-tabs button{flex:1;border:0;background:none;border-radius:9px;padding:8px;font:inherit;font-weight:700;font-size:14px;color:var(--text-2);cursor:pointer}.a2-tabs button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}' +
-    '.a2-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;text-align:start}.a2-steps li{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.45}' +
-    '.a2-steps b{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px}' +
-    '.a2-note{font-size:13.5px;color:var(--muted);margin-top:12px;line-height:1.5}.a2-done{background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-weight:600;margin-top:16px}';
-  function addCss2() { if (!document.getElementById("jiCss")) { var st = document.createElement("style"); st.id = "jiCss"; st.textContent = css2; document.head.appendChild(st); } }
-  var SHARE_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
-  var A2_STEPS = {
-    ios: ["Open this page in Safari.", "Tap the Share button at the bottom of the screen. " + SHARE_ICON, "Scroll down and tap Add to Home Screen, then tap Add."],
-    android: ["Open this page in Chrome.", "Tap the ⋮ menu at the top right.", "Tap Add to Home screen or Install app, then tap Add."]
-  };
-  // the steps block, shared by the intro and the More screen
-  function a2hsHtml() {
-    if (isStandalone()) return '<div class="a2-done">✓ <span>Jim is already on your home screen.</span></div>';
-    var p = platform() === "android" ? "android" : "ios";
-    return '<div class="a2-tabs" role="tablist"><button data-a2="ios" class="' + (p === "ios" ? "on" : "") + '">iPhone</button><button data-a2="android" class="' + (p === "android" ? "on" : "") + '">Android</button></div>' +
-      '<ol class="a2-steps" id="a2Steps"></ol>' +
-      '<button class="ji-go" id="a2Install" style="margin-top:12px;' + (installEvt ? "" : "display:none") + '">Install Jim</button>' +
-      '<div class="a2-note">' + (platform() === "other" ? "On a computer? Open jeremybaiden.github.io/jim on your phone and follow these steps." : "Jim then opens full screen from its own icon, just like an app.") + '</div>';
-  }
-  function wireA2(root) {
-    var draw = function (p) {
-      var ol = root.querySelector("#a2Steps"); if (!ol) return;
-      ol.innerHTML = A2_STEPS[p].map(function (s, i) { return '<li><b>' + (i + 1) + '</b><span>' + s + '</span></li>'; }).join("");
-      Array.prototype.forEach.call(root.querySelectorAll("[data-a2]"), function (b) { b.classList.toggle("on", b.getAttribute("data-a2") === p); });
-    };
-    Array.prototype.forEach.call(root.querySelectorAll("[data-a2]"), function (b) { b.onclick = function () { draw(b.getAttribute("data-a2")); }; });
-    var on = root.querySelector("[data-a2].on"); if (on) draw(on.getAttribute("data-a2"));
-    var ib = root.querySelector("#a2Install");
-    if (ib) ib.onclick = async function () { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; ib.style.display = "none"; };
-  }
-  function logoHtml() { return Array.from(document.querySelectorAll(".brand .logo")).map(function (i) { return i.outerHTML; }).join(""); }
-  function langChips() {
-    var J = window.JIM_LANG; if (!J) return "";
-    return '<div class="ji-lbl">Language</div><div class="ji-langs">' + J.list.map(function (l) { return '<button data-jilang="' + l[0] + '" class="' + (l[0] === J.get() ? "on" : "") + '" data-noi18n>' + l[1] + '</button>'; }).join("") + '</div>';
-  }
-  var SLIDES = [
-    { e: "💪", t: "Meet Jim, your personal coach", d: "Jim plans your week, tells you what weight to lift next, and keeps an eye on every muscle group." },
-    { e: "📝", t: "Log a workout in seconds", d: "Start a session and Jim fills in the weights to use. A rest timer runs between sets, and every new PR gets celebrated." },
-    { e: "📈", t: "See the work pay off", d: "Charts for your strength and weekly sets per muscle, plus body weight and private progress photos." },
-    { e: "🗓️", t: "Built around you", d: "Pick a split and where you train. Jim builds your sessions from 349+ exercises, with exercise info courtesy of MuscleWiki." },
-    { e: "📲", t: "Add Jim to your home screen", d: "Open Jim like an app, full screen, in one tap.", a2: true }
-  ];
-  function showIntro(done) {
-    addCss2();
-    var slides = SLIDES.filter(function (s) { return !(s.a2 && isStandalone()); });
-    var i = 0, bg = document.createElement("div"); bg.className = "ji-bg"; bg.id = "jiBg";
-    bg.setAttribute("role", "dialog"); bg.setAttribute("aria-modal", "true"); bg.setAttribute("aria-label", "Welcome to Jim");
-    var finish = function () { lsSet(INTRO_SEEN, "1"); bg.remove(); done(); };
-    var draw = function () {
-      var s = slides[i], last = i === slides.length - 1;
-      bg.innerHTML = '<div class="ji"><div class="ji-top">' + logoHtml() + '</div>' + (i === 0 ? langChips() : "") +
-        '<div class="ji-emoji" aria-hidden="true">' + s.e + '</div><h1>' + s.t + '</h1><p>' + s.d + '</p>' + (s.a2 ? a2hsHtml() : "") +
-        '<div class="ji-push"></div><div class="ji-dots" aria-label="' + (i + 1) + ' / ' + slides.length + '">' + slides.map(function (_, k) { return '<i class="' + (k === i ? "on" : "") + '"></i>'; }).join("") + '</div>' +
-        '<button class="ji-go" id="jiNext">' + (last ? "Get started" : "Next") + '</button>' +
-        '<div class="ji-sub"><button id="jiBack" style="' + (i ? "" : "visibility:hidden") + '">Back</button><button id="jiSkip">Skip</button></div></div>';
-      if (s.a2) wireA2(bg);
-      bg.querySelector("#jiNext").onclick = function () { if (last) finish(); else { i++; draw(); bg.scrollTop = 0; } };
-      bg.querySelector("#jiBack").onclick = function () { if (i) { i--; draw(); bg.scrollTop = 0; } };
-      bg.querySelector("#jiSkip").onclick = finish;
-      Array.prototype.forEach.call(bg.querySelectorAll("[data-jilang]"), function (b) { b.onclick = function () { window.JIM_LANG.set(b.getAttribute("data-jilang"), true); draw(); }; });
-    };
-    draw(); document.body.appendChild(bg);
-  }
-  // "Add to home screen" from the More screen
-  function showA2HS() {
-    addCss2(); if (document.getElementById("a2Bg")) return;
-    var bg = document.createElement("div"); bg.className = "ji-bg"; bg.id = "a2Bg"; bg.setAttribute("role", "dialog"); bg.setAttribute("aria-modal", "true"); bg.setAttribute("aria-label", "Add Jim to your home screen");
-    bg.innerHTML = '<div class="ji"><div class="ji-top">' + logoHtml() + '</div><div class="ji-emoji" aria-hidden="true">📲</div><h1>Add Jim to your home screen</h1><p>Open Jim like an app, full screen, in one tap.</p>' + a2hsHtml() +
-      '<div class="ji-push"></div><button class="ji-go" id="a2Close" style="margin-top:22px">Close</button></div>';
-    document.body.appendChild(bg); wireA2(bg);
-    bg.querySelector("#a2Close").onclick = function () { bg.remove(); };
-  }
-  window.JIM_A2HS = showA2HS;
-
   async function signOut() { try { await sb.auth.signOut(); } catch (e) {} lsDel(GUEST); location.replace(here()); }
   async function deleteData() {
     if (!session) return;
@@ -292,11 +303,11 @@
   document.addEventListener("click", function (e) {
     var b = e.target.closest && e.target.closest("[data-jimweb]"); if (!b) return;
     var a = b.getAttribute("data-jimweb");
-    if (a === "a2hs") showA2HS(); else if (a === "signin") showSignIn(true); else if (a === "signout") signOut(); else if (a === "delete") deleteData();
+    if (a === "signin") showSignIn(true); else if (a === "signout") signOut(); else if (a === "delete") deleteData();
   });
   ready.then(function (s) {
     if (s || lsGet(GUEST)) return;
-    var go = function () { if (lsGet(INTRO_SEEN)) showSignIn(false); else showIntro(function () { showSignIn(false); }); };
+    var go = function () { var I = window.JIM_INTRO; if (!I || I.seen()) showSignIn(false); else I.show(function () { showSignIn(false); }); };
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", go); else go();
   });
 })();
@@ -508,7 +519,7 @@ th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04
 .chips.scroll{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
 .chips.scroll::-webkit-scrollbar{display:none}
 .chips.scroll .chip{flex:0 0 auto}
-.seg{display:inline-flex;background:var(--surface-2);border-radius:10px;padding:3px;gap:2px}
+.seg{display:inline-flex;flex-wrap:wrap;max-width:100%;background:var(--surface-2);border-radius:10px;padding:3px;gap:2px}
 .seg button{border:0;background:transparent;padding:6px 11px;border-radius:8px;font-size:13px;font-weight:600;color:var(--text-2);cursor:pointer}
 .seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.1)}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:90;padding:20px}
@@ -669,7 +680,7 @@ details.g .gb{padding:0 16px 14px}
 .card.collapsed>:not(.cl-keep){display:none!important}
 .card.collapsed>.cl-keep :is(.seg,select,.btn:not(.cl-btn),.hint,small,.chips,input,label:not(.cl-head)):not(.cl-head *):not(:has(.cl-head)){display:none!important}
 .card.collapsed .cl-head{margin:0!important}
-.cl-bar{display:flex;justify-content:flex-end;gap:12px;margin:-4px 0 8px}
+.cl-bar{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:4px 12px;margin:-4px 0 8px}
 .collapse-head .chev{font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap}
 .tbl-wrap{overflow-x:auto;margin-top:8px}
 .wtable{font-size:12.5px;width:100%}
@@ -729,12 +740,13 @@ html.simple .hits,html.simple [data-meta],html.simple [data-hint],html.simple .v
 .stp button{width:38px;border:0;border-radius:8px;background:var(--surface-2);font-size:20px;font-weight:800;cursor:pointer;color:var(--text)}
 .set-row.st{grid-template-columns:28px 1fr 1fr 30px}
 .speak{border:0;background:none;cursor:pointer;font-size:16px;padding:0 2px;color:var(--accent)}
-#bigTimer{position:fixed;inset:0;z-index:60;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:24px}
+#bigTimer{position:fixed;inset:0;z-index:60;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:safe center;gap:24px;padding:24px;overflow-y:auto}
 #bigTimer.on{display:flex}
-#bigTimer .bt-t{font-size:min(30vw,180px);font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+#bigTimer .bt-t{font-size:min(30vw,26vh,180px);font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
 #bigTimer .bt-t.done{color:var(--good)}
 #bigTimer .bt-l{font-size:20px;font-weight:700;color:var(--text-2)}
 #bigTimer .row button{font-size:20px;min-height:56px;padding:12px 20px}
+@media (max-height:500px){#bigTimer{gap:10px}#bigTimer .row button{font-size:17px;min-height:46px;padding:8px 16px}#bigTimer .bt-l{font-size:16px}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .loc-banner{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2);margin-bottom:12px}
 .wrap{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;box-sizing:border-box}
@@ -812,8 +824,17 @@ nav.tabs{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inse
 .toast{bottom:calc(86px + env(safe-area-inset-bottom))}
 .modal-bg,#bigTimer{padding-top:calc(20px + env(safe-area-inset-top));padding-bottom:calc(20px + env(safe-area-inset-bottom))}
 .modal{max-height:100%;overflow:auto}
+/* iPhone zooms the whole page when you tap a box with text under 16px: keep every box at 16px+ there */
+@supports (-webkit-touch-callout:none){select,input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea{font-size:max(16px,1em)}}
+/* full-screen views (rest timer, photo viewer, dialogs) have their buttons at the bottom: show messages at the top instead */
+body:has(#bigTimer.on,.ph-view.on,.modal-bg.on,#jiBg,#a2Bg,#jwBg) .toast{bottom:auto;top:calc(14px + env(safe-area-inset-top));transform:translateX(-50%) translateY(-20px)}
+body:has(#bigTimer.on,.ph-view.on,.modal-bg.on,#jiBg,#a2Bg,#jwBg) .toast.on{transform:translateX(-50%) translateY(0)}
 .ph-view{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
 @media (max-width:700px){
+  /* long (translated) button labels wrap instead of pushing past the screen edge */
+  .btn{white-space:normal;text-align:center;line-height:1.25;overflow-wrap:break-word}
+  .row:has(> .btn + .btn){flex-wrap:wrap}
+  .row:has(> .btn + .btn) > .btn{min-width:min-content}
   /* the demo tutorial becomes a compact card docked above the tab bar instead of covering the top half of the screen */
   .demo-bar.touring{position:fixed;top:auto;left:calc(8px + env(safe-area-inset-left));right:calc(8px + env(safe-area-inset-right));bottom:calc(var(--navh,72px) + 8px + env(safe-area-inset-bottom));margin:0;z-index:60;max-height:40vh;overflow:auto;padding:10px 12px;font-size:13px;gap:6px}
   .demo-bar.touring .tour-t{font-size:15px}
@@ -1596,7 +1617,7 @@ $("#quickChips").addEventListener("click",e=>{ const b=e.target.closest("[data-s
 
 function renderLog(){
   $("#wName").value=draft.name; $("#wDate").value=draft.date; $("#wNotes").value=draft.notes;
-  $("#logTitle").textContent = editingId?"Edit workout":((S().name||(!demo&&meInfo?.name?meInfo.name.split(" ")[0]:""))?`Hey ${esc(S().name||meInfo.name.split(" ")[0])}, let's train`:"Log workout");
+  $("#logTitle").textContent = editingId?"Edit workout":((S().name||(!demo&&meInfo?.name?meInfo.name.split(" ")[0]:""))?`Hey ${S().name||meInfo.name.split(" ")[0]}, let's train`:"Log workout");
   $("#cancelEdit").style.display = editingId?"":"none";
   $("#saveW").textContent = editingId?"Save changes":"Save workout";
   renderQuick();
@@ -2118,7 +2139,7 @@ function renderHistory(){
   if(!list.length && period){ el.innerHTML=`<div class="card empty"><b>No workouts in this period</b>Use the arrows or pick another period.</div>`; return; }
   if(!list.length){ el.innerHTML=`<div class="card empty"><b>No workouts yet</b>Log your first session and it'll show up here.</div>`; return; }
   let lastWk=null;
-  el.innerHTML=list.map(w=>{ const wk=weekStart(w.date); let head=""; if(!selWeek && wk!==lastWk){ lastWk=wk; const st=weekStats(wk); head=`<button class="split-cat" data-gowk="${wk}" style="display:block;width:100%;text-align:left;background:none;border:0;cursor:pointer;padding:0">Week of ${fmtWeek(wk)} · ${st.n} workouts · ${fmtVol(st.vol)} ${unit} ›</button>`; }
+  el.innerHTML=list.map(w=>{ const wk=weekStart(w.date); let head=""; if(!selWeek && wk!==lastWk){ lastWk=wk; const st=weekStats(wk); head=`<button class="split-cat" data-gowk="${wk}" style="display:block;width:100%;text-align:left;background:none;border:0;cursor:pointer;padding:0">Week of ${fmtWeek(wk)} · ${st.n} ${st.n===1?"workout":"workouts"} · ${fmtVol(st.vol)} ${unit} ›</button>`; }
     const d=new Date(w.date+"T12:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric",year:"numeric"}); const sets=w.exercises.reduce((t,e)=>t+e.sets.length,0);
     return head+`<div class="card"><div class="hist-top"><div><div class="hist-title">${esc(w.name)}</div><div class="hist-date">${d}${w.loc?" · "+LOCS[w.loc]?.short:""}</div>
       <div class="hist-meta">${w.exercises.length} exercise${w.exercises.length!==1?"s":""} · ${sets} sets · ${fmtVol(workoutVolume(w))} ${unit} volume</div></div>
@@ -2657,7 +2678,7 @@ function exitDemo(){
   unit=preDemo.unit; ls.set("liftlog.unit",unit); draft=preDemo.draft; editingId=preDemo.editingId;
   items = mode==="cloud" && cloudItems ? cloudItems : (ls.get("liftlog.items",null)||ls.get("liftlog.workouts",[]));
   $("#demoBar").classList.remove("on","touring"); document.documentElement.classList.remove("touring"); $$(".tour-hl").forEach(x=>x.classList.remove("tour-hl"));
-  saveDraftSoon(); rebuildLib(items); renderUnit(); renderAll(); applyTheme(); showTab(wasAuto?"plan":currentTab); syncExampleBtn(); toast(wasAuto?"Tour done. Pick a split to get started":"Back to your own data");
+  saveDraftSoon(); rebuildLib(items); renderUnit(); renderAll(); applyTheme(); const hasPlan=wasAuto&&templates().length>0; showTab(wasAuto?(hasPlan?"home":"plan"):currentTab); syncExampleBtn(); toast(wasAuto?(hasPlan?"Tour done. Back to your own data":"Tour done. Pick a split to get started"):"Back to your own data");
 }
 document.addEventListener("click",e=>{ const b=e.target.closest("[data-go]"); if(!b) return; const g=b.dataset.go; if(g==="tour") startTour(); else showTab(g); });
 $("#demoExit").onclick=exitDemo; $("#tourBtn").onclick=startTour; $("#welcomeTour").onclick=startTour;
@@ -2852,7 +2873,7 @@ async function openPhoto(ids){ phOpen=ids; const P=ids.map(id=>items.find(x=>x.i
   else { title=fmtD(P[0].date); sub=[POSES[P[0].pose],P[0].note,wAt(P[0].date)].filter(Boolean).join(" · "); }
   $("#phView").innerHTML=`<div class="ph-top"><div class="grow">${esc(title)}<small>${esc(sub)}</small></div>${P.length===1&&!demo?`<button data-phdel="${P[0].id}">Delete</button>`:""}<button data-phclose="1">Close</button></div>
     <div class="ph-body">${P.map((p,i)=>`<figure>${srcs[i]?`<img src="${srcs[i]}" alt="">`:`<div class="miss" style="flex:1;display:flex;align-items:center;justify-content:center">Saved on another device</div>`}${P.length===2?`<figcaption>${fmtD(p.date)}${wAt(p.date)?" · "+wAt(p.date):""}</figcaption>`:""}</figure>`).join("")}</div>
-    ${P.length===1?`<button class="ph-nav" data-phstep="-1" style="left:10px" aria-label="Newer">‹</button><button class="ph-nav" data-phstep="1" style="right:10px" aria-label="Older">›</button>`:""}`;
+    ${P.length===1?(()=>{ const F=photoItems().filter(p=>phFilter==="all"||p.pose===phFilter); const i=F.findIndex(p=>p.id===P[0].id); return (i>0?`<button class="ph-nav" data-phstep="-1" style="left:10px" aria-label="Newer">‹</button>`:"")+(i>=0&&i<F.length-1?`<button class="ph-nav" data-phstep="1" style="right:10px" aria-label="Older">›</button>`:""); })():""}`;
   $("#phView").classList.add("on"); }
 $("#phGrid").addEventListener("click",e=>{ const b=e.target.closest("[data-ph]"); if(!b) return; const id=b.dataset.ph;
   if(phCompare){ phCompare=phCompare.includes(id)?phCompare.filter(x=>x!==id):[...phCompare,id].slice(-2); if(phCompare.length===2){ const ids=phCompare; phCompare=null; renderPhotos(); openPhoto(ids); } else renderPhotos(); return; }
@@ -2881,7 +2902,7 @@ function renderTry(shuffle){
   $$("[data-try]").forEach(el=>{
     el.innerHTML=`<div class="try-head"><div><h3>Try something new</h3><div class="hint" style="margin:2px 0 0">Random picks for ${LOCS[loc].label.toLowerCase()}, with exercise information courtesy of ${MW_LINK}. Swipe to see more.</div></div><button class="btn sm try-shuffle">🔀 Shuffle</button></div>
       <div class="try-wrap"><div class="try">${tryPicks.map(tryCard).join("")}</div>
-      <button class="try-arrow try-prev" style="left:-20px" aria-label="Previous">‹</button><button class="try-arrow try-next" style="right:-20px" aria-label="Next">›</button></div>
+      <button class="try-arrow try-prev" style="left:-8px" aria-label="Previous">‹</button><button class="try-arrow try-next" style="right:-8px" aria-label="Next">›</button></div>
       <div class="try-dots"></div>`;
     const list=el.querySelector(".try"); list.addEventListener("scroll",()=>tryDots(el),{passive:true});
     ["pointerenter","touchstart","focusin"].forEach(ev=>list.addEventListener(ev,()=>{ tryHold=true; },{passive:true}));
