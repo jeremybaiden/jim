@@ -8,6 +8,8 @@ A gym tracker that coaches you: log workouts, weights and reps, and Jim tells yo
 
 - **Jim (home)**: where you are in the week, today's session with the weights to use, and Jim's notes on what to change.
 - **Train**: log sets, reps, weight and reps in reserve, with a rest timer. Sessions start pre-filled with Jim's targets.
+- **Build it for me** (Plan → New session): pick the session type, up to 3 muscles to target most, and a Balanced ↔ Aesthetics slider; add core work and cardio at the end. Jim picks exercises for your equipment and fits your time.
+- **Cardio**: treadmill, bike, rower, elliptical, stair climber, walking, jogging and bodyweight HIIT, logged in minutes.
 - **Plan**: splits for home (no equipment or dumbbells) and commercial gyms, including full body, upper/lower, PPL, Arnold, bro split and sports plans. Weekly sets per muscle against your targets.
 - **Progress**: charts and history for any period (last N weeks, a date range, or hand-picked weeks), sets per muscle, strength over time and weekly volume.
 - **Exercise library**: 349 exercises with main muscles and subgroups (e.g. triceps medial head), multi-select filters, and your own custom exercises. Exercise information courtesy of [MuscleWiki.com](https://musclewiki.com/).

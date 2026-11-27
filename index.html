@@ -856,6 +856,32 @@ body:has(#bigTimer.on,.ph-view.on,.modal-bg.on,#jiBg,#a2Bg,#jwBg) .toast.on{tran
   html.touring .toast{bottom:calc(46vh + env(safe-area-inset-bottom))}
   .tour-hl{scroll-margin-top:calc(12px + env(safe-area-inset-top))}
 }
+/* session builder */
+.bld{border:1px solid var(--line);border-radius:12px;background:var(--surface-2);margin:0 0 14px}
+.bld>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.bld>summary::-webkit-details-marker{display:none}
+.bld>summary::after{content:"+";position:absolute;right:14px;top:10px;font-size:20px;color:var(--muted)}
+.bld{position:relative}.bld[open]>summary::after{content:"–"}
+.bld-t{font-weight:800;font-size:15px;padding-right:24px}.bld-s{font-size:12.5px;color:var(--text-2);padding-right:24px}
+.bld-b{padding:0 14px 14px}.bld .setup-l:first-child{margin-top:2px}
+.bld .chip{background:var(--surface)}.bld .chip.on{background:var(--accent)}
+.bld .setup-l .hl{font-weight:500;color:var(--muted);margin-left:4px}
+.bslider input[type=range]{width:100%;accent-color:var(--accent);height:28px;margin:0;cursor:pointer}
+.bs-ends{display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;color:var(--text-2)}
+.bld .seg{background:var(--surface)}.bld .seg button.on{background:var(--accent);color:var(--accent-ink)}
+.bld .trange input{width:70px}
+.set-row.cardio-row input{text-align:center}
+/* ---- bottom tab bar: always pinned to the bottom of the screen, solid, and above everything that scrolls (labels under the icons) ---- */
+nav.tabs{position:fixed!important;left:0;right:0;bottom:0;top:auto;z-index:70;background:var(--surface);-webkit-transform:translateZ(0);transform:translateZ(0);-webkit-backface-visibility:hidden;backface-visibility:hidden;isolation:isolate;contain:layout paint;box-shadow:0 -4px 14px rgba(0,0,0,.06)}
+html.dk nav.tabs{box-shadow:0 -4px 14px rgba(0,0,0,.35)}
+nav.tabs::after{content:"";position:absolute;left:0;right:0;top:100%;height:240px;background:var(--surface)}
+nav.tabs .inner{align-items:stretch}
+nav.tabs .inner button[data-tab],body nav.tabs .inner button[data-tab]{flex:1 1 0;min-width:0;flex-direction:column!important;align-items:center;justify-content:center;gap:3px!important;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+nav.tabs .inner button[data-tab] svg{flex-shrink:0}
+@media(min-width:980px){ body nav.tabs .inner button[data-tab]{padding:8px 6px 9px;font-size:12px;margin:3px 0} }
+/* page content always scrolls clear of the bar */
+html:not(.touring) .wrap,html:not(.touring) body .wrap{padding-bottom:calc(var(--navh,72px) + 28px + env(safe-area-inset-bottom))!important}
+#bigTimer{z-index:78}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -1221,8 +1247,8 @@ body:has(#bigTimer.on,.ph-view.on,.modal-bg.on,#jiBg,#a2Bg,#jwBg) .toast.on{tran
 const DEMO_ONLY = /*DEMO_ONLY*/false;
 /* ================= DATA ================= */
 const LIB_RAW = "Kettlebell Single Arm Forward Lunge|kb|quads,glutes|kettlebell-single-arm-forward-lunge\nKettlebell Step Up|kb|quads,glutes|kettlebell-step-up\nKettlebell Goblet Squat|kb|quads,glutes|kettlebell-goblet-squat\nKettlebell Lateral Lunge (Single)|kb|quads|kettlebell-lateral-lunge-single\nBarbell Bench Press|bb|chest|barbell-bench-press\nBarbell Incline Bench Press|bb|chest|barbell-incline-bench-press\nBarbell Floor Press|bb|chest|barbell-floor-press\nBarbell Hooklying Bench Press|bb|chest|barbell-hooklying-bench-press\nElevated Pike Press|bw|shoulders,traps|elevated-pike-press\nElevated Pike Shoulder Shrug|bw|traps|elevated-pike-shoulder-shrug\nBodyweight Pike Press|bw|shoulders,traps|bodyweight-pike-press\nBodyweight Pike Shrug|bw|traps|bodyweight-pike-shrug\nCable Pallof Press|cable|obliques|cable-pallof-press\nCable Wood Chopper|cable|obliques|cable-wood-chopper\nCable Half Kneeling High To Low Wood Chopper|cable|obliques|cable-half-kneeling-high-to-low-wood-chopper\nCable Half Kneeling Low To High Wood Chopper|cable|obliques|cable-half-kneeling-low-to-high-wood-chopper\nPush Up|bw|chest|push-up\nBox Dips|bw|chest,triceps|box-dips\nIncline Push Up|bw|chest,triceps|incline-push-up\nDecline Push Up|bw|chest,triceps|decline-push-up\nKettlebell Chest Press (Single)|kb|chest,triceps|kettlebell-chest-press-single\nKettlebell Single Arm Press|kb|chest,triceps|kettlebell-single-arm-press\nKettlebell Single Arm Chest Fly|kb|chest|kettlebell-single-arm-chest-fly\nKettlebell Walkover Pushup|kb|chest,triceps|kettlebell-walkover-pushup\nNeutral Chest Press|mach|chest,triceps|neutral-chest-press\nMachine Assisted Parallel Bar Dips|mach|chest,triceps|machine-assisted-parallel-bar-dips\nMachine Chest Press|mach|chest,triceps|machine-chest-press\nMachine Pec Fly|mach|chest|machine-pec-fly\nDumbbell Lateral Raise|db|shoulders|dumbbell-lateral-raise\nDumbbell Front Raise|db|shoulders|dumbbell-front-raise\nDumbbell Seated Rear Delt Fly|db|shoulders|dumbbell-seated-rear-delt-fly\nDumbbell Seated Overhead Press|db|shoulders|dumbbell-seated-overhead-press\nSmith Machine Upright Row|smith|shoulders,traps|smith-machine-upright-row\nSmith Machine Seated Overhead Press|smith|shoulders|smith-machine-seated-overhead-press\nMachine Seated Shrug|mach|traps|machine-seated-shrug\nMachine Standing Shrug|mach|traps|machine-standing-shrug\nKettlebell Calf Raise|kb|calves|kettlebell-calf-raise\nKettlebell Single Leg Calf Raise|kb|calves|kettlebell-single-leg-calf-raise\nKettlebell Seated Calf Raise|kb|calves|kettlebell-seated-calf-raise\nKettlebell Goblet Calf Raise|kb|calves|kettlebell-goblet-calf-raise\nBodyweight Squat|bw|quads,glutes|bodyweight-squat\nForward Lunges|bw|quads|forward-lunges\nBulgarian Split Squat|bw|quads|bulgarian-split-squat\nJump Squats|bw|quads|jump-squats\nDumbbell Incline Bench Press|db|chest|dumbbell-incline-bench-press\nDumbbell Incline Chest Flys|db|chest|dumbbell-incline-chest-flys\nDumbbell Bench Press|db|chest,triceps|dumbbell-bench-press\nDumbbell Chest Fly|db|chest|dumbbell-chest-fly\nCable Goblet Squat|cable|quads,glutes,lowerback|cable-goblet-squat\nCable Split Squat|cable|quads|cable-split-squat\nCable Standing Leg Extension|cable|quads|cable-standing-leg-extension\nCable Zercher Squat|cable|quads|cable-zercher-squat\nCable Chest Press|cable|chest|cable-chest-press\nCable Pec Fly|cable|chest|cable-pec-fly\nCable Incline Chest Fly|cable|chest|cable-incline-chest-fly\nCable Bench Chest Fly|cable|chest|cable-bench-chest-fly\nCable Rope Face Pulls|cable|shoulders|machine-face-pulls\nCable Overhead Press|cable|shoulders|cable-overhead-press\nCable Low Single Arm Lateral Raise|cable|shoulders|cable-low-single-arm-lateral-raise\nCable Upright Row|cable|shoulders,traps|cable-upright-row\nSmith Machine Guillotine Bench Press|smith|chest,triceps|smith-machine-guillotine-bench-press\nSmith Machine Bench Press|smith|chest|smith-machine-bench-press\nSmith Machine Incline Bench Press|smith|chest|smith-machine-incline-bench-press\nSmith Machine Pushup|smith|chest|smith-machine-pushup\nBand Pushup|band|chest,triceps|band-pushup\nBand Single Arm Pec Fly|band|chest|band-single-arm-pec-fly\nBand Chest Fly|band|chest|band-chest-fly\nBand Chest Press|band|chest|band-chest-press\nBand Bayesian Curl|band|biceps|band-bayesian-curl\nBand Row|band|lats,biceps|band-row\nBand Bayesian Hammer Curl|band|biceps,forearms|band-bayesian-hammer-curl\nBand Kneeling Single Arm Pulldown|band|lats,biceps|band-kneeling-single-arm-pulldown\nMachine Seated Cable Row|mach|traps-middle,lats,biceps|machine-seated-cable-row\nNarrow Pulldown|mach|lats,traps-middle,biceps|narrow-pulldown\nNeutral Pulldown|mach|traps-middle,biceps|neutral-pulldown\nMachine Plate Loaded Low Row|mach|traps-middle|machine-plate-loaded-low-row\nCable Bent Over Bar Pullover|cable|lats|cable-bent-over-bar-pullover\nCable Pull In|cable|lats,biceps|cable-pull-in\nCable Lat Prayer|cable|lats|cable-lat-prayer\nCable Archer Row|cable|lats|cable-archer-row\nMachine Roll Outs|mach|abdominals|machine-roll-outs\nRower Knee Tuck|mach|abdominals|rower-knee-tuck\nRower Pike|mach|abdominals|rower-pike\nMachine Crunch|mach|abdominals|machine-crunch\nDumbbell Bulgarian Split Squat|db|quads,glutes|dumbbell-bulgarian-split-squat\nDumbbell Hip Thrust|db|glutes|dumbbell-hip-thrust\nDumbbell Romanian Deadlift|db|hamstrings,glutes,lowerback|dumbbell-romanian-deadlift\nDumbbell Glute Bridge|db|glutes,hamstrings|dumbbell-glute-bridge\nKettlebell Upright Row|kb|shoulders,traps|kettlebell-upright-row\nKettlebell Front Raise|kb|shoulders|kettlebell-front-raise\nKettlebell Rear Delt Row|kb|shoulders|kettlebell-rear-delt-row\nKettlebell Long Lever Lateral Raise|kb|shoulders|kettlebell-long-lever-lateral-raise\nBand Pull Apart|band|shoulders,traps-middle|band-pull-apart\nBand Face Pull|band|shoulders|band-face-pull\nBand Front Raise|band|shoulders|band-front-raise\nBand High Face Pull|band|shoulders,traps-middle|band-high-face-pull\nCable Bar Romanian Deadlift|cable|hamstrings,glutes,lowerback|cable-bar-romanian-deadlift\nCable Single Leg Deadlift|cable|hamstrings,lowerback|cable-single-leg-deadlift\nCable Hamstring Curl|cable|hamstrings|cable-hamstring-curl\nCable Pull Through|cable|hamstrings|cable-pull-through\nBand Romanian Deadlift|band|hamstrings,glutes,lowerback|band-romanian-deadlift\nBand Good Morning|band|hamstrings,lowerback|band-good-morning\nBand Pullthrough|band|hamstrings,lowerback|band-pullthrough\nBand Standing Good Morning|band|lowerback|band-standing-good-morning\nChin Ups|bw|lats,biceps,forearms|chin-ups\nBodyweight Assisted Chin Up|bw|lats,biceps|bodyweight-assisted-chin-up\nBodyweight Assisted Pull Up|bw|lats,biceps|bodyweight-assisted-pull-up\nBodyweight Inverted Curl|bw|biceps|bodyweight-inverted-curl\nMachine Leg Press|mach|quads,glutes|machine-leg-press\nMachine Belt Squat|mach|glutes|machine-belt-squat\nVertical Leg Press|mach|glutes|vertical-leg-press\nGluteator|mach|glutes|gluteator\nKettlebell Goblet Curl|kb|biceps|kettlebell-goblet-curl\nKettlebell Single Arm Curl|kb|biceps|kettlebell-single-arm-curl\nKettlebell Preacher Curl|kb|biceps|kettlebell-preacher-curl\nKettlebell Concentration Curl|kb|biceps|kettlebell-concentration-curl\nBarbell Close Grip Bench Press|bb|triceps|barbell-close-grip-bench-press\nBarbell Laying Triceps Extensions|bb|triceps|barbell-laying-triceps-extensions\nBarbell Skullcrusher|bb|triceps|barbell-skullcrusher\nBarbell Overhead Tricep Extension|bb|triceps|barbell-overhead-tricep-extension\nCable Single Arm Bayesian Curl|cable|biceps|cable-single-arm-bayesian-curl\nCable Single Arm Hammer Curl|cable|biceps|cable-single-arm-hammer-curl\nCable Twisting Curl|cable|biceps|cable-twisting-curl\nBarbell Curl|bb|biceps|barbell-curl\nBarbell Bent Over Row|bb|lats,biceps,forearms|barbell-bent-over-row\nBarbell Reverse Curl|bb|biceps,forearms|barbell-reverse-curl\nBarbell Landmine Row|bb|traps-middle,biceps|barbell-landmine-row\nKettlebell Decline Skull Crusher|kb|triceps|kettlebell-decline-skull-crusher\nInverted Row|bw|lats,traps-middle,forearms|inverted-row\nBodyweight Overhand Inverted Row|bw|forearms,traps-middle|bodyweight-overhand-inverted-row\nBodyweight Standing Inverted Row|bw|forearms,traps-middle|bodyweight-standing-inverted-row\nMachine Cable V Bar Push Downs|mach|triceps|machine-cable-v-bar-push-downs\nCable Calve Raise|cable|calves|cable-calve-raise\nCable Bar Calve Raise|cable|calves|cable-bar-calve-raise\nCable Belt Calf Raise|cable|calves|cable-belt-calf-raise\nDiamond Push Ups|bw|triceps|diamond-push-ups\nPull Ups|bw|lats,traps-middle|pull-ups\nDumbbell Wrist Extension|db|forearms|dumbbell-wrist-extension\nDumbbell Wrist Curl|db|forearms|dumbbell-wrist-curl\nDumbbell Row Unilateral|db|lats,traps-middle,forearms|dumbbell-row-unilateral\nDumbbell Reverse Curl|db|forearms,biceps|dumbbell-reverse-curl\nCable Rope Pushdown|cable|triceps|cable-rope-pushdown\nCable Cross Pushdown|cable|triceps|cable-cross-pushdown\nCable Rope Skullcrusher|cable|triceps|cable-rope-skullcrusher\nCable Rope Overhead Tricep Extension|cable|triceps|cable-rope-overhead-tricep-extension\nKettlebell Farmers Carry|kb|forearms|kettlebell-farmers-carry\nKettlebell Wrist Curl|kb|forearms|kettlebell-wrist-curl\nKettlebell Wrist Extension|kb|forearms|kettlebell-wrist-extension\nKettlebell Row (Single)|kb|lats,traps-middle,forearms|kettlebell-row-single\nBand Pullover|band|lats|band-pullover\nBand Squat Hold Row|band|lats|band-squat-hold-row\nCable Silverback Shrug|cable|traps,traps-middle|cable-silverback-shrug\nCable 30 Degree Shrug|cable|traps|cable-30-degree-shrug\nCable Single Arm 30 Degree Shrug|cable|traps|cable-single-arm-30-degree-shrug\nBarbell Long Landmine Row|bb|lats|barbell-long-landmine-row\nBarbell Meadows Row|bb|lats|barbell-meadows-row\nBarbell Pronated Pendlay Row|bb|lats|barbell-pronated-pendlay-row\nDumbbell Row Bilateral|db|lats,traps-middle,lowerback|dumbbell-row-bilateral\nDumbbell Pullover|db|lats|dumbbell-pullover\nDumbbell Alternating Pendlay Row|db|lats|dumbbell-alternating-pendlay-row\nBand Horizontal Shrug|band|traps-middle,traps|band-horizontal-shrug\nBand Rear Delt Fly|band|traps-middle,shoulders|band-rear-delt-fly\nKettlebell Incline Shrug|kb|traps,traps-middle|kettlebell-incline-shrug\nKettlebell Silverback Shrug (Single)|kb|traps,traps-middle|kettlebell-silverback-shrug-single\nKettlebell Shrug (Single)|kb|traps|kettlebell-shrug-single\nBarbell Deadlift|bb|glutes,lowerback,traps-middle,hamstrings|barbell-deadlift\nBarbell High Pull|bb|traps-middle|barbell-high-pull\nBarbell Snatch Grip High Pull|bb|traps-middle|barbell-snatch-grip-high-pull\nDumbbell Goblet Good Morning|db|hamstrings,lowerback|dumbbell-goblet-good-morning\nDumbbell Superman|db|lowerback|dumbbell-superman\nSmith Machine Situp|smith|abdominals|smith-machine-situp\nSmith Machine Hanging Knee Tuck|smith|abdominals|smith-machine-hanging-knee-tuck\nSmith Machine Reverse Crunch Hip Raise|smith|abdominals|smith-machine-reverse-crunch-hip-raise\nBand Crunch|band|abdominals|band-crunch\nBand High To Low Pallof Press Wood Chopper|band|obliques,abdominals|band-high-to-low-pallof-press-wood-chopper\nBand Low To High Pallof Press Wood Chopper|band|obliques,abdominals|band-low-to-high-pallof-press-wood-chopper\nMini Band Around The World Plank|band|abdominals|mini-band-around-the-world-plank\nKettlebell Russian Twist|kb|obliques,abdominals|kettlebell-russian-twist\nKettlebell Windmill|kb|obliques,abdominals|kettlebell-windmill\nKettlebell Wood Chopper|kb|obliques|kettlebell-wood-chopper\nKettlebell Gorilla Row|kb|obliques,lats|kettlebell-gorilla-row\nKettlebell Single Arm Row|kb|lats|kettlebell-single-arm-row\nKettlebell Pullover|kb|lats|kettlebell-pullover\nKettlebell Shoulder Extension|kb|lats|kettlebell-shoulder-extension\nKettlebell Staggered Deadlift (Single)|kb|hamstrings,lowerback|kettlebell-staggered-deadlift-single\nKettlebell Swing|kb|hamstrings,glutes,lowerback|kettlebell-swing\nKettlebell Goblet Good Morning|kb|hamstrings,lowerback|kettlebell-goblet-good-morning\nKettlebell Single Leg Deadlift|kb|hamstrings,lowerback|kettlebell-single-leg-deadlift\nBarbell Squat|bb|quads,glutes|barbell-squat\nBarbell Step Up|bb|quads|barbell-step-up\nBarbell Sumo Deadlift|bb|quads,glutes,lowerback|barbell-sumo-deadlift\nBarbell High Bar Squat|bb|quads|barbell-high-bar-squat\nSmith Machine Skullcrusher|smith|triceps|smith-machine-skullcrusher\nSmith Machine Close Grip Bench Press|smith|triceps|smith-machine-close-grip-bench-press\nSmith Machine Bodyweight Skullcrusher|smith|triceps|smith-machine-bodyweight-skullcrusher\nBarbell Romanian Deadlift|bb|hamstrings,lowerback|barbell-romanian-deadlift\nBarbell Stiff Leg Deadlifts|bb|hamstrings|barbell-stiff-leg-deadlifts\nBarbell Staggered Deadlift|bb|hamstrings|barbell-staggered-deadlift\nBarbell Low Bar Good Morning|bb|hamstrings|barbell-low-bar-good-morning\nUnderhand Pulldown|mach|lats,biceps|underhand-pulldown\nCable Row Bar Standing Row|cable|traps-middle|cable-row-bar-standing-row\nCable Single Arm Underhand Grip Row|cable|traps-middle|cable-single-arm-underhand-grip-row\nCable Single Arm Neutral Grip Row|cable|traps-middle|cable-single-arm-neutral-grip-row\nBarbell Roll Outs|bb|abdominals|barbell-roll-outs\nBarbell Situp|bb|abdominals|barbell-situp\nBarbell Front Squat Olympic|bb|quads,abdominals|barbell-front-squat-olympic\nBarbell Larsen Bench Press|bb|chest,abdominals|barbell-larsen-bench-press\nCable Standing Straight Leg Glute Kickback|cable|glutes|cable-standing-straight-leg-glute-glute-kickback\nCable Standing Hip Abduction|cable|glutes|cable-standing-hip-abduction\nWalking Calf Raises|bw|calves|walking-calf-raises\nTip Toe Walking|bw|calves|tip-toe-walking\nCalf Raises|bw|calves|calf-raises\nBodyweight Donkey Calf Raise|bw|calves|bodyweight-donkey-calf-raise\nBarbell Overhead Press|bb|shoulders|barbell-overhead-press\nBarbell Front Raise|bb|shoulders|barbell-front-raise\nBarbell Upright Row|bb|shoulders,traps|barbell-upright-row\nBarbell Z Press|bb|shoulders,traps|barbell-z-press\nBarbell Landmine Side Bend|bb|obliques|barbell-landmine-side-bend\nBarbell Suitcase Deadlift|bb|obliques|barbell-suitcase-deadlift\nLandmine Alternating Lunge And Twist|bb|obliques|landmine-alternating-lunge-and-twist\nLandmine Kneeling Twist|bb|obliques|landmine-kneeling-twist\nSmith Machine Calf Raise|smith|calves|smith-machine-calf-raise\nSmith Machine Seated Calf Raise|smith|calves|smith-machine-seated-calf-raise\nBarbell Wrist Curl|bb|forearms|barbell-wrist-curl\nBarbell Behind The Back Wrist Curl|bb|forearms|barbell-behind-the-back-wrist-curl\nBand Pallof Press|band|obliques|band-pallof-press\nBand Wood Chopper|band|obliques|band-wood-chopper\nDumbbell Goblet Squat|db|quads|dumbbell-goblet-squat\nDumbbell Goblet Lateral Lunge|db|quads|dumbbell-goblet-lateral-lunge\nSmith Machine Staggered Deadlift|smith|hamstrings,glutes,lowerback|smith-machine-staggered-deadlift\nSmith Machine Romanian Deadlift|smith|hamstrings|smith-machine-romanian-deadlift\nSmith Machine Sumo Romanian Deadlift|smith|hamstrings,lowerback|smith-machine-sumo-romanian-deadlift\nSmith Machine Glute Kickback|smith|glutes|smith-machine-glute-kickback\nSmith Machine Leg Press|smith|quads,glutes|smith-machine-leg-press\nSmith Machine Single Leg Hip Thrust|smith|glutes|smith-machine-single-leg-hip-thrust\nDumbbell Silverback Shrug|db|traps,traps-middle|dumbbell-silverback-shrug\nDumbbell Rear Delt Row|db|traps-middle,shoulders,biceps|dumbbell-rear-delt-row\nSmith Machine Assisted Pullup|smith|lats,traps-middle|smith-machine-assisted-pullup\nSmith Machine Inverted Row|smith|lats,traps-middle,forearms|smith-machine-inverted-row\nBand Squat|band|quads,glutes|band-squat\nBand Leg Press|band|quads,glutes|band-leg-press\nBand Spanish Squat|band|quads|band-spanish-squat\nBand Leg Extension|band|quads|band-leg-extension\nBand Glute Kickback|band|glutes|band-glute-kickback\nMachine Seated Calf Raises|mach|calves|machine-seated-calf-raises\nMachine Standing Calf Raises|mach|calves|machine-standing-calf-raises\nMachine Horizontal Leg Press Calf Jump|mach|calves|machine-horizontal-leg-press-calf-jump\nMachine Horizontal Leg Press Calf Raise|mach|calves|machine-horizontal-leg-press-calf-raise\nGlute Bridge|bw|glutes|glute-bridge\nKickbacks|bw|glutes|kickbacks\nSingle Legged Romanian Deadlifts|bw|hamstrings,glutes,lowerback|single-legged-romanian-deadlifts\nKettlebell Hip Thrust|kb|glutes|kettlebell-hip-thrust\nGlute Ham Raise|mach|hamstrings|glute-ham-raise\nMachine Hamstring Curl|mach|hamstrings|machine-hamstring-curl\nSeated Leg Curl|mach|hamstrings|seated-leg-curl\nMachine Seated Leg Curl|mach|hamstrings|machine-seated-leg-curl\nKettlebell Situp|kb|abdominals|kettlebell-situp\nKettlebell Front Rack Curtsy Lunge (Double)|kb|quads,abdominals|kettlebell-front-rack-curtsy-lunge-double\nSmith Machine Underhand Row|smith|lats,biceps,lowerback|smith-machine-underhand-row\nSmith Machine Overhand Row|smith|lats,biceps,lowerback|smith-machine-overhand-row\nDumbbell Leg Curl|db|hamstrings|dumbbell-leg-curl\nBackward Arm Circle|bw|shoulders|backward-arm-circle\nForward Arm Circle|bw|shoulders|forward-arm-circle\nDumbbell Curl|db|biceps|dumbbell-curl\nDumbbell Hammer Curl|db|biceps,forearms|dumbbell-hammer-curl\nBand Bayesian Reverse Curl|band|forearms|band-bayesian-reverse-curl\nBand High Reverse Curl|band|forearms|band-high-reverse-curl\nBand Reverse Curl|band|forearms|band-reverse-curl\nSmith Machine Drag Curl|smith|biceps|smith-machine-drag-curl\nMachine Leg Extension|mach|quads|machine-leg-extension\nMachine Goblet Sissy Squat|mach|quads|machine-goblet-sissy-squat\nMachine Sissy Squat|mach|quads|machine-sissy-squat\nCrunches|bw|abdominals|crunches\nLaying Leg Raises|bw|abdominals|laying-leg-raises\nLong Lever Plank|bw|abdominals|long-lever-plank\nHanging Knee Raises|bw|abdominals|hanging-knee-raises\nBarbell Silverback Shrug|bb|traps|barbell-silverback-shrug\nBarbell Shrug|bb|traps|barbell-shrug\nBand Calf Raise|band|calves|band-calf-raise\nCable Wrist Extension|cable|forearms|cable-wrist-extension\nCable Wrist Curl|cable|forearms|cable-wrist-curl\nCable Single Arm Reverse Curl|cable|forearms|cable-single-arm-reverse-curl\nCable Bar Reverse Grip Curl|cable|forearms|cable-bar-reverse-grip-curl\nDumbbell Russian Twist|db|obliques,abdominals|dumbbell-russian-twist\nDumbbell Wood Chopper|db|obliques|dumbbell-wood-chopper\nDumbbell Half Kneeling Wood Chopper|db|obliques|dumbbell-half-kneeling-wood-chopper\nDumbbell Kneeling Wood Chopper|db|obliques|dumbbell-kneeling-wood-chopper\nBarbell Hip Thrust|bb|glutes|barbell-hip-thrust\nKettlebell Deadlift (Single)|kb|traps-middle,hamstrings|kettlebell-deadlift-single\nBand Leg Curl|band|hamstrings|band-leg-curl\nDumbbell Skullcrusher|db|triceps|dumbbell-skullcrusher\nDumbbell Seated Overhead Tricep Extension|db|triceps|dumbbell-seated-overhead-tricep-extension\nDumbbell Decline Skullcrusher|db|triceps|dumbbell-decline-skullcrusher\nBodyweight Russian Twist|bw|obliques|bodyweight-russian-twist\nSide Plank Up Down|bw|obliques|side-plank-up-down\nSide Plank Reach Through|bw|obliques|side-plank-reach-through\nElbow Side Plank|bw|obliques|elbow-side-plank\nDumbbell Shrug|db|traps|dumbbell-shrug\nDumbbell Seated Shrug|db|traps|dumbbell-seated-shrug\nDumbbell Laying 30 Degree Shrug|db|traps|dumbbell-laying-30-degree-shrug\nMachine 45 Degree Back Extension|mach|lowerback|machine-45-degree-back-extension\nMachine Back Extension|mach|lowerback|machine-back-extension\nMachine Reverse Hyperextension|mach|lowerback|machine-reverse-hyperextension\nBand Shrug|band|traps|band-shrug\nBand Upright Row|band|traps|band-upright-row\nGood Mornings|bw|hamstrings,lowerback|good-mornings\nSupermans|bw|lowerback|supermans\nBodyweight Staggered Waiters Bow|bw|lowerback|bodyweight-staggered-waiters-bow\nBarbell Calf Raises|bb|calves|barbell-calf-raises\nBarbell Calf Jump|bb|calves|barbell-calf-jump\nBarbell Seated Calf Raise|bb|calves|barbell-seated-calf-raise\nBarbell Toes Up Calf Raise|bb|calves|barbell-toes-up-calf-raise\nSmith Machine Oblique Crunch|smith|obliques|smith-machine-oblique-crunch\nSmith Machine Side Bend|smith|obliques|smith-machine-side-bend\nSmith Machine Side Plank Up Down|smith|obliques|smith-machine-side-plank-up-down\nNordic Hamstring Curl|bw|hamstrings|nordic-hamstring-curl\nBodyweight Reverse Lunge|bw|hamstrings,quads|bodyweight-reverse-lunge\nBarbell Low Bar Squat|bb|quads,glutes,lowerback|barbell-low-bar-squat\nBand Skullcrusher|band|triceps|band-skullcrusher\nBand Overhead Tricep Extension|band|triceps|band-overhead-tricep-extension\nBand Rapunzel Pushdown|band|triceps|band-rapunzel-pushdown\nSmith Machine Squat|smith|quads|smith-machine-squat\nSmith Machine Sissy Squat|smith|quads|smith-machine-sissy-squat\nSmith Machine Split Squat|smith|quads|smith-machine-split-squat\nMachine Pulldown|mach|lats|machine-pulldown\nCable Row Bar Kneeling Crunch|cable|abdominals|cable-row-bar-kneeling-crunch\nCable Standing Crunch|cable|abdominals|cable-standing-crunch\nCable Rope Kneeling Crunch|cable|abdominals|cable-rope-kneeling-crunch\nCable Rope Kneeling Oblique Crunch|cable|abdominals,obliques|cable-rope-kneeling-oblique-crunch\nDumbbell Situp|db|abdominals|dumbbell-situp\nDumbbell Plank Pullthrough|db|abdominals|dumbbell-plank-pullthrough\nDumbbell Hollow Hold|db|abdominals|dumbbell-hollow-hold\nDumbbell Calf Raise|db|calves|dumbbell-calf-raise\nDumbbell Seated Calf Raise|db|calves|dumbbell-seated-calf-raise\nDumbbell Single Leg Calf Raise|db|calves|dumbbell-single-leg-calf-raise\nBox Jump|bw|quads,glutes|box-jump\nSingle Leg Box Jump|bw|quads,glutes|single-leg-box-jump\nDepth Jump|bw|quads,glutes|depth-jump\nSeated Box Jump|bw|quads,glutes|seated-box-jump\nBurpee|bw|abdominals,chest|burpee\nJump Rope|bw|calves|jump-rope\nButt Kick|bw|hamstrings|butt-kick\nMedicine Ball Chest Press Slam|mb|chest,triceps|chest-press-slam\nMedicine Ball Chest Press Toss|mb|chest,triceps|chest-press-toss\nMedicine Ball Rainbow Slam|mb|obliques|rainbow-slam\nMedicine Ball Clean And Press Slam|mb|glutes,quads|clean-and-press-slam\nMedicine Ball Lateral Lunge Slam|mb|glutes,quads|medicine-ball-lateral-lunge-slam\nMedicine Ball Partner Side Toss|mb|obliques|partner-side-toss\nMedicine Ball Press Jack|mb|shoulders|press-jack\n";
-const EQ = {bw:"Bodyweight",band:"Band",db:"Dumbbells",kb:"Kettlebell",mb:"Medicine ball",bb:"Barbell",cable:"Cables",mach:"Machine",smith:"Smith machine"};
-const EQ_ORDER = ["bw","band","db","kb","mb","bb","cable","mach","smith"];
+const EQ = {bw:"Bodyweight",band:"Band",db:"Dumbbells",kb:"Kettlebell",mb:"Medicine ball",bb:"Barbell",cable:"Cables",mach:"Machine",smith:"Smith machine",cardio:"Cardio machines"};
+const EQ_ORDER = ["bw","band","db","kb","mb","bb","cable","mach","smith","cardio"];
 const MUSCLE = {chest:"Chest",shoulders:"Shoulders",lats:"Lats","traps-middle":"Upper back",traps:"Traps",biceps:"Biceps",triceps:"Triceps",forearms:"Forearms",abdominals:"Abs",obliques:"Obliques",lowerback:"Lower back",quads:"Quads",hamstrings:"Hamstrings",glutes:"Glutes",calves:"Calves"};
 const MUSCLE_ORDER = ["chest","shoulders","lats","traps-middle","traps","biceps","triceps","forearms","abdominals","obliques","lowerback","quads","hamstrings","glutes","calves"];
 // volume groups (for weekly set counting)
@@ -1277,6 +1303,24 @@ const AUTHORED = [
  {name:"Lateral Shuffle",slug:"ll-lateral-shuffle",eq:"bw",hits:{Glutes:{role:"main",regions:["Glute med"]},Quads:{role:"also",regions:["Inner thigh"]},Calves:{role:"also",regions:[]}},note:"Stay low and push off the outside foot. Log one rep per 10 m shuffle."}
 ];
 AUTHORED.forEach(a=>{ a.ll=true; a.diff=""; a.mech="C"; NOTES[a.slug]=a.note; BASE_LIB.push(a); });
+/* cardio (written for Jim): logged in minutes, no weight; doesn't count toward weekly sets per muscle */
+const CARDIO = [
+ {name:"Incline Treadmill Walk",slug:"ll-incline-walk",eq:"cardio",note:"Steady pace on an incline (8–12%). You should be able to talk in short sentences."},
+ {name:"Stationary Bike",slug:"ll-bike",eq:"cardio",note:"Steady, comfortable pace. Easy on the knees and a good warm-down after legs."},
+ {name:"Elliptical",slug:"ll-elliptical",eq:"cardio",note:"Steady pace, low impact. Push and pull the handles to use your arms too."},
+ {name:"Rowing Machine",slug:"ll-rower",eq:"cardio",note:"Steady strokes: legs, then hips, then arms. Keep your back tall."},
+ {name:"Brisk Walk",slug:"ll-brisk-walk",eq:"bw",note:"Outside or on a treadmill, fast enough to breathe harder but still chat."},
+ {name:"Easy Jog",slug:"ll-jog",eq:"bw",note:"Relaxed pace you could keep up for a while. Walk breaks are fine."},
+ {name:"Rowing Intervals",slug:"ll-rower-intervals",eq:"cardio",note:"Row hard for 30 seconds, easy for 60–90 seconds. Repeat for the whole time."},
+ {name:"Bike Sprints",slug:"ll-bike-sprints",eq:"cardio",note:"20–30 seconds all-out, then 1–2 minutes easy spinning. Repeat."},
+ {name:"Stair Climber",slug:"ll-stair-climber",eq:"cardio",note:"Alternate 1 minute fast and 1 minute easy. Don't lean on the rails."},
+ {name:"Bodyweight HIIT Circuit",slug:"ll-hiit-circuit",eq:"bw",note:"Jumping jacks, mountain climbers, high knees and squats: 30 seconds on, 30 seconds off, round and round."},
+ {name:"Hill or Stair Intervals",slug:"ll-hill-intervals",eq:"bw",note:"Walk or run up a hill or stairs fast, walk back down slowly. Repeat."}
+];
+CARDIO.forEach(a=>{ Object.assign(a,{ll:true,cardio:true,diff:"",mech:"",hits:{}}); NOTES[a.slug]=a.note; BASE_LIB.push(a); });
+const isCardio = name => !!(BY_NAME[(name||"").trim().toLowerCase()]||{}).cardio;
+// how a planned exercise reads: "3×8–12" or "15–20 min" for cardio
+const prescr = x => isCardio(x.name) ? (x.lo===x.hi||!x.hi ? `${x.lo||x.hi||15} min` : `${x.lo}–${x.hi} min`) : `${x.sets}×${x.lo}–${x.hi}`;
 const PLYO = new Set(["jump-squats","box-jump","single-leg-box-jump","depth-jump","seated-box-jump","burpee","jump-rope","chest-press-slam","chest-press-toss","rainbow-slam","clean-and-press-slam","medicine-ball-lateral-lunge-slam","partner-side-toss","press-jack","kettlebell-swing",...AUTHORED.map(a=>a.slug)]);
 BASE_LIB.forEach(x=>{ if(PLYO.has(x.slug)) x.plyo=true; });
 Object.assign(NOTES,{"box-jump":"Use a sturdy box, step or bench. Step down instead of jumping down.","depth-jump":"Step off a low box (30–45 cm), then jump up the instant you land. Advanced: do these after a few months of other jumps.","single-leg-box-jump":"Start with a low box. Land softly on the same leg.","jump-rope":"Needs a jump rope. Good warm-up and calf conditioning."});
@@ -1332,7 +1376,15 @@ const PATTERNS = {
   agility:{p:1,l:["ll-lateral-shuffle"]},
   pogo:{p:1,l:["ll-pogo-hops","jump-rope"]},
   antirot:{c:0,l:["cable-pallof-press","band-pallof-press","elbow-side-plank"]},
-  nordic:{c:0,l:["nordic-hamstring-curl","glute-ham-raise","seated-leg-curl","dumbbell-leg-curl"]}
+  nordic:{c:0,l:["nordic-hamstring-curl","glute-ham-raise","seated-leg-curl","dumbbell-leg-curl"]},
+  fly:{c:0,l:["cable-pec-fly","machine-pec-fly","dumbbell-chest-fly","band-chest-fly","kettlebell-single-arm-chest-fly"]},
+  hammer:{c:0,l:["dumbbell-hammer-curl","cable-single-arm-hammer-curl","band-bayesian-hammer-curl"]},
+  shrug:{c:0,l:["dumbbell-shrug","barbell-shrug","machine-standing-shrug","cable-30-degree-shrug","kettlebell-shrug-single","band-shrug","elevated-pike-shoulder-shrug"]},
+  forearm:{c:0,l:["dumbbell-wrist-curl","cable-wrist-curl","barbell-wrist-curl","kettlebell-wrist-curl","band-reverse-curl"]},
+  abs:{c:0,l:["cable-rope-kneeling-crunch","hanging-knee-raises","machine-crunch","dumbbell-hollow-hold","laying-leg-raises","crunches"]},
+  obliques:{c:0,l:["cable-rope-kneeling-oblique-crunch","cable-wood-chopper","dumbbell-russian-twist","band-wood-chopper","bodyweight-russian-twist","elbow-side-plank"]},
+  cardio:{k:1,l:["ll-incline-walk","ll-bike","ll-elliptical","ll-rower","ll-brisk-walk","ll-jog"]},
+  hiit:{k:1,l:["ll-rower-intervals","ll-bike-sprints","ll-stair-climber","ll-hiit-circuit","ll-hill-intervals"]}
 };
 const FB_A=[["squat",3],["hpush",3],["vpull",3],["legcurl",2],["lateral",2],["triceps",2],["core",2]];
 const FB_B=[["hinge",3],["inclinepush",3],["hpull",3],["lunge",2],["reardelt",2],["biceps",2],["calves",2]];
@@ -1428,6 +1480,7 @@ let items = ls.get("liftlog.items", null) || ls.get("liftlog.workouts",[]); // l
 let mode = "local", cloudCol = null, demo = false, cloudItems = null, cloudBlocked = false;
 let draft=null, editingId=null, range=0;
 let tdraft = ls.get("liftlog.tdraft", null);   // template being edited
+let bldOpen = null;   // session builder open/closed (null = open for an empty session)
 let libTarget = null; // "log" | "tpl" | null
 const workouts = () => items.filter(x=>x.type==="workout");
 const templates = () => items.filter(x=>x.type==="template").sort((a,b)=>(a.order??a.createdAt??0)-(b.order??b.createdAt??0));
@@ -1452,7 +1505,7 @@ function tailorEquip(exs){
     const lib=BY_NAME[(x.name||"").toLowerCase()];
     if(!lib||lib.custom||av.has(lib.eq)){ out.push(x); continue; }
     const pat=SLUG2PAT[lib.slug]; const alt=pat&&pick(pat,used);
-    if(alt){ used.add(alt.slug); const bw=alt.eq==="bw"; const y={...x,name:alt.name,slug:alt.slug}; if(bw&&!PATTERNS[pat].p&&(y.hi||0)<12){ y.lo=Math.max(y.lo||8,8); y.hi=Math.max(y.hi||15,15); } out.push(y); swaps.push([x.name,alt.name]); }
+    if(alt){ used.add(alt.slug); const bw=alt.eq==="bw"; const y={...x,name:alt.name,slug:alt.slug}; if(bw&&!PATTERNS[pat].p&&!PATTERNS[pat].k&&(y.hi||0)<12){ y.lo=Math.max(y.lo||8,8); y.hi=Math.max(y.hi||15,15); } out.push(y); swaps.push([x.name,alt.name]); }
     else dropped.push(x.name);
   }
   return {exs:out,swaps,dropped};
@@ -1462,18 +1515,19 @@ function tailorTime(exs,minutes,superset,atLeast){
   let E=exs.map(x=>({...x})); atLeast=+atLeast||0; if(!minutes&&!atLeast) return {exs:E,changed:false};
   const est=()=>estMinutes({exercises:E,superset}); const isComp=x=>{ const l=BY_NAME[(x.name||"").toLowerCase()]; const p=l&&SLUG2PAT[l.slug]; return p?!!(PATTERNS[p].c||PATTERNS[p].p):x.lo<10; };
   const start=est(); let guard=0;
-  const setsDown=(min,compToo)=>{ while(minutes&&est()>minutes&&guard++<200){ const i=E.map((x,k)=>[x,k]).filter(([x])=>x.sets>min&&(compToo||!isComp(x))).sort((a,b)=>isComp(a[0])-isComp(b[0])||b[0].sets-a[0].sets||b[1]-a[1])[0]; if(!i) break; E[i[1]].sets--; } };
+  const setsDown=(min,compToo)=>{ while(minutes&&est()>minutes&&guard++<200){ const i=E.map((x,k)=>[x,k]).filter(([x])=>x.sets>min&&!isCardio(x.name)&&(compToo||!isComp(x))).sort((a,b)=>isComp(a[0])-isComp(b[0])||b[0].sets-a[0].sets||b[1]-a[1])[0]; if(!i) break; E[i[1]].sets--; } };
   const restTo=(c,a)=>{ if(minutes&&est()>minutes) E.forEach(x=>{ x.rest=Math.min(x.rest||90,isComp(x)?c:a); }); };
   setsDown(3,true);          // 1) nothing above 3 sets
   restTo(120,60);            // 2) a bit less rest
   setsDown(2,false);         // 3) accessories down to 2 sets
   restTo(90,45);             // 4) shortest sensible rests
-  while(minutes&&est()>minutes&&E.length>3&&guard++<300){ let k=-1; for(let j=E.length-1;j>=0;j--) if(!isComp(E[j])){ k=j; break; } if(k<0) break; E.splice(k,1); } // 5) drop accessories from the end
+  E.forEach(x=>{ while(minutes&&isCardio(x.name)&&est()>minutes&&(x.hi||x.lo||0)>10){ x.hi=Math.max(10,(x.hi||x.lo)-5); x.lo=Math.min(x.lo||x.hi,x.hi); } }); // 4b) shorter cardio (not below 10 min)
+  while(minutes&&est()>minutes&&E.length>3&&guard++<300){ let k=-1; for(let j=E.length-1;j>=0;j--) if(!isComp(E[j])&&!isCardio(E[j].name)&&!E[j].keep){ k=j; break; } if(k<0) break; E.splice(k,1); } // 5) drop accessories from the end
   setsDown(2,true);          // 6) big lifts down to 2 sets
-  while(minutes&&est()>minutes&&E.length>2&&guard++<400) E.pop(); // 7) last resort: fewer exercises
+  while(minutes&&est()>minutes&&E.length>2&&guard++<400){ let k=E.length-1; while(k>0&&(isCardio(E[k].name)||E[k].keep)) k--; if(k<=0){ k=E.length-1; while(k>0&&isCardio(E[k].name)) k--; } E.splice(k,1); } // 7) last resort: fewer exercises
   // 8) time to spare: add sets to the big lifts first (max 5) — up to your minimum if you set one, otherwise close to your limit
   const want=()=>atLeast?est()<atLeast:est()+8<=minutes;
-  guard=0; while(want()&&guard++<20){ const i=E.map((x,k)=>[x,k]).filter(([x])=>x.sets<5).sort((a,b)=>isComp(b[0])-isComp(a[0])||a[0].sets-b[0].sets||a[1]-b[1])[0]; if(!i) break; E[i[1]].sets++; if(minutes&&est()>minutes){ E[i[1]].sets--; break; } }
+  guard=0; while(want()&&guard++<20){ const i=E.map((x,k)=>[x,k]).filter(([x])=>x.sets<5&&!isCardio(x.name)).sort((a,b)=>isComp(b[0])-isComp(a[0])||a[0].sets-b[0].sets||a[1]-b[1])[0]; if(!i) break; E[i[1]].sets++; if(minutes&&est()>minutes){ E[i[1]].sets--; break; } }
   return {exs:E,changed:est()!==start};
 }
 let todayRange=null; // today's time range (null = your usual time)
@@ -1564,7 +1618,7 @@ function lastSession(name, excludeId){ const ss=sessionsFor(name).filter(s=>s.wi
 const setsStr = sets => sets.map(x=>(x.w?fmtW(x.w):"BW")+"×"+x.r).join(", ");
 function lastSessionText(name, excludeId){
   if(!name.trim()) return ""; const s=lastSession(name,excludeId); if(!s) return "";
-  return "Last time ("+new Date(s.date+"T12:00").toLocaleDateString(undefined,{month:"short",day:"numeric"})+"): "+setsStr(s.sets);
+  return "Last time ("+new Date(s.date+"T12:00").toLocaleDateString(undefined,{month:"short",day:"numeric"})+"): "+(isCardio(name)?s.sets.reduce((a,x)=>a+x.r,0)+" min":setsStr(s.sets));
 }
 /* Coach: increase / hold / decrease suggestions from recent sessions (uses reps-in-reserve when logged) */
 const dispR=kg=>Math.round(toDisp(kg)*100)/100;
@@ -1580,6 +1634,10 @@ function coach(ex, excludeId){
   const isoX = lib?.mech==="I";
   const lo=ex.lo||lastEx?.lo||(isoX?S().isoLo:S().compLo), hi=ex.hi||lastEx?.hi||(isoX?S().isoHi:S().compHi);
   const s=hist[hist.length-1];
+  if(lib?.cardio){ const hiit=PATTERNS.hiit.l.includes(lib.slug); const mins=s?s.sets.reduce((a,x)=>a+x.r,0):0;
+    if(!s) return {k:"new",label:"Start",text:hiit?`Go hard for 20–30 seconds, then easy for 60–90 seconds, for about ${lo} minutes. Log the total minutes.`:`Aim for ${lo}${hi&&hi!==lo?"–"+hi:""} minutes at a pace where you can still talk in short sentences. Log the minutes.`};
+    if(mins>=(hi||lo)) return {k:"up",label:"↑ Progress",text:hiit?`You did ${mins} min. Next time add one more hard round, or push a little harder in each one.`:`You did ${mins} min. Next time add 2–5 minutes, or a bit more speed or incline.`};
+    return {k:"hold",label:"→ Hold",text:`You did ${mins} min. Build up to ${hi||lo} minutes at this pace before making it harder.`}; }
   if(lib?.plyo){
     if(!s) return {k:"new",label:"Start",text:`Do ${lo}–${hi} explosive reps per set with full rest. Stop a set as soon as your jumps or throws get slower or lower.`};
     if(s.sets.every(x=>x.r>=hi)) return {k:"up",label:"↑ Progress",text:`All sets hit ${hi}. Make it harder: higher box, longer jump, heavier ball or a single-leg version. Don't just add more reps.`};
@@ -1624,13 +1682,14 @@ function estMinutes(t){
   for(let i=0;i<ex.length;i++){
     const a=ex[i];
     if(t.superset && i+1<ex.length){ const b=ex[i+1]; const n=Math.max(a.sets,b.sets); sec+= n*(40+40+Math.max(a.rest,b.rest)*0.6); i++; }
+    else if(isCardio(a.name)) sec+= (a.sets||1)*(a.hi||a.lo||15)*60+60;
     else sec+= a.sets*(40+a.rest);
   }
   return Math.round(sec/60);
 }
 
 /* ================= VOLUME BARS ================= */
-const GROUP_PATS={Chest:["hpush","inclinepush"],Back:["vpull","hpull"],Shoulders:["lateral","vpush","reardelt"],Biceps:["biceps"],Triceps:["triceps"],Quads:["squat","lunge","quadiso"],Hamstrings:["legcurl","hinge"],Glutes:["hipthrust","lunge"],Calves:["calves"],Core:["core"],"Lower back":["hinge"],Traps:[],Forearms:[]};
+const GROUP_PATS={Chest:["hpush","inclinepush"],Back:["vpull","hpull"],Shoulders:["lateral","vpush","reardelt"],Biceps:["biceps"],Triceps:["triceps"],Quads:["squat","lunge","quadiso"],Hamstrings:["legcurl","hinge"],Glutes:["hipthrust","lunge"],Calves:["calves"],Core:["core","obliques"],"Lower back":["hinge"],Traps:["shrug"],Forearms:["forearm"]};
 const ADVISE_GROUPS=["Chest","Back","Shoulders","Biceps","Triceps","Quads","Hamstrings","Glutes","Calves","Core"];
 function groupAdvice(g,v,doneNames){
   const T=tgt(g); if(v>=T.lo&&v<=T.hi) return "";
@@ -1700,7 +1759,14 @@ function renderLog(){
       <p class="hint" data-meta="${ei}">${metaHTML(ex,lib)}</p>
       <div class="tip" data-tip="${ei}" style="${ex.name?"":"display:none"}">${tipHTML(ex)}</div>
       <p class="hint" data-hint="${ei}">${esc(lastSessionText(ex.name,editingId))}</p>
-      <div class="sets-head"><span style="text-align:center">Set</span><span style="text-align:center">Weight (${unit})</span><span style="text-align:center">Reps</span><span></span></div>
+      ${lib&&lib.cardio?`<div class="sets-head"><span style="text-align:center">Set</span><span style="text-align:center;grid-column:span 2">Minutes</span><span></span></div>
+      ${ex.sets.map((s,si)=>`
+        <div class="set-row cardio-row">
+          <span class="set-no">${si+1}</span>
+          <input type="number" inputmode="numeric" min="0" step="1" placeholder="${ex.lo?ex.lo+(ex.hi&&ex.hi!==ex.lo?"–"+ex.hi:""):"min"}" value="${s.r}" data-r="${ei}-${si}" aria-label="Set ${si+1} minutes" style="grid-column:span 2">
+          <button class="icon-btn" data-delset="${ei}-${si}" aria-label="Remove set ${si+1}">${ICON_X}</button>
+        </div>`).join("")}
+      <button class="btn ghost" data-addset="${ei}">+ Add set</button>`:`<div class="sets-head"><span style="text-align:center">Set</span><span style="text-align:center">Weight (${unit})</span><span style="text-align:center">Reps</span><span></span></div>
       ${ex.sets.map((s,si)=>`
         <div class="set-row ${A11Y().steppers?"st":""}">
           <span class="set-no">${si+1}</span>
@@ -1710,13 +1776,13 @@ function renderLog(){
         </div>`).join("")}
       <button class="btn ghost" data-addset="${ei}">+ Add set</button>
       <div class="rir-row"><label class="f" style="margin:0">Reps left in the tank on your last set <span class="hl" style="font-weight:500;color:var(--muted)">(RIR)</span></label>
-        <div class="chips">${[0,1,2,3,4].map(v=>`<button class="chip sm ${ex.rir===v?"on":""}" data-rir="${ei}-${v}">${v===0?"0 · failure":v===4?"4+":v}</button>`).join("")}</div></div>`;
+        <div class="chips">${[0,1,2,3,4].map(v=>`<button class="chip sm ${ex.rir===v?"on":""}" data-rir="${ei}-${v}">${v===0?"0 · failure":v===4?"4+":v}</button>`).join("")}</div></div>`}`;
     list.appendChild(card);
   });
   if(!draft.exercises.length) list.innerHTML=`<div class="card empty"><b>No exercises yet</b>Start a session above, add one, or browse the library.</div>`;
 }
 function metaHTML(ex,lib){
-  const parts=[]; if(ex.lo) parts.push(`<b>Target ${ex.lo}–${ex.hi} reps</b>`); if(linkable(lib)) parts.push(`<a href="${mwUrl(lib.slug)}" target="_blank" rel="noopener">How to do it on MuscleWiki.com ↗</a>`);
+  const parts=[]; if(ex.lo) parts.push(lib&&lib.cardio?`<b>Target ${prescr(ex)}</b>`:`<b>Target ${ex.lo}–${ex.hi} reps</b>`); if(linkable(lib)) parts.push(`<a href="${mwUrl(lib.slug)}" target="_blank" rel="noopener">How to do it on MuscleWiki.com ↗</a>`);
   return parts.join(" · ")+(lib&&Object.keys(lib.hits).length?`<br>Works: ${hitsHTML(lib,true)}${linkable(lib)?` <span class="mw-src">(muscle info: MuscleWiki)</span>`:""}`:"");
 }
 function tipHTML(ex){ const c=coach(ex,editingId); const i=draft.exercises.indexOf(ex); return c?`<span class="coach-k ${c.k}">${c.label}</span><span class="grow">${esc(c.text)}</span>`:""; }
@@ -1728,7 +1794,7 @@ function refreshExMeta(ei){
 }
 $("#exList").addEventListener("input",e=>{
   const t=e.target;
-  if(t.dataset.ex!=null){ const ei=+t.dataset.ex; draft.exercises[ei].name=t.value; refreshExMeta(ei); }
+  if(t.dataset.ex!=null){ const ei=+t.dataset.ex; const was=isCardio(draft.exercises[ei].name); draft.exercises[ei].name=t.value; refreshExMeta(ei); if(was!==isCardio(t.value)){ saveDraftSoon(); renderLog(); const f=$(`[data-ex="${ei}"]`); if(f){ f.focus(); f.setSelectionRange(f.value.length,f.value.length); } return; } }
   else if(t.dataset.w){ const [ei,si]=t.dataset.w.split("-").map(Number); draft.exercises[ei].sets[si].w = t.value===""?"":fromDisp(parseFloat(t.value)||0); }
   else if(t.dataset.r){ const [ei,si]=t.dataset.r.split("-").map(Number); draft.exercises[ei].sets[si].r = t.value===""?"":Math.max(0,parseInt(t.value)||0); }
   saveDraftSoon();
@@ -1749,6 +1815,7 @@ $("#exList").addEventListener("click",e=>{
 });
 function parseStp(v){ const m=v.match(/^([wr])-(\d+)-(\d+)-(-?1)$/); return [m[1],+m[2],+m[3],+m[4]]; }
 function addToLog(name, extra){
+  if(isCardio(name)){ draft.exercises.push({name,lo:extra?.lo||15,hi:extra?.hi||20,rest:0,sets:Array.from({length:extra?.sets||1},()=>({w:"",r:""}))}); saveDraftSoon(); return; }
   const last=lastSession(name);
   let w = last ? Math.max(...last.sets.map(s=>s.w)) : "";
   // pre-fill the weight the coach suggests (heavier, same or lighter)
@@ -1784,7 +1851,7 @@ $("#saveW").onclick=async()=>{
   if(!exercises.length){ toast("Add at least one exercise with reps"); return; }
   const prev=editingId?workouts().find(w=>w.id===editingId):null;
   const prs=[];
-  exercises.forEach(ex=>{ const hist=sessionsFor(ex.name).filter(s=>s.wid!==editingId); if(!hist.length) return;
+  exercises.forEach(ex=>{ if(isCardio(ex.name)) return; const hist=sessionsFor(ex.name).filter(s=>s.wid!==editingId); if(!hist.length) return;
     const bestPrev=Math.max(...hist.map(s=>s.best)); const now=Math.max(...ex.sets.map(s=>e1rm(s.w,s.r)));
     const repsPrev=Math.max(...hist.flatMap(s=>s.sets.filter(x=>!x.w).map(x=>x.r)),0); const repsNow=Math.max(...ex.sets.filter(x=>!x.w).map(x=>x.r),0);
     if(now>bestPrev+0.01 || (repsNow>repsPrev && repsPrev>0)) prs.push(ex.name); });
@@ -1880,7 +1947,7 @@ function renderTemplates(){
   if(!t.length){ el.innerHTML=`<div class="card empty"><b>No sessions yet</b>Create a split above or build your own.</div>`; return; }
   el.innerHTML=t.map(x=>{
     const lines=x.exercises.map((e,i)=>{ let tag=""; if(x.superset){ const pair=Math.floor(i/2); tag=`<span class="ss">${String.fromCharCode(65+pair)}${i%2+1}</span> `; }
-      const lib=BY_NAME[e.name.toLowerCase()]; return `${tag}<b>${e.sets}×${e.lo}–${e.hi}</b> ${esc(e.name)}${lib?` <span style="color:var(--muted)">· ${Object.entries(lib.hits).filter(h=>h[1].role==="main").map(h=>h[0]).join(", ")}</span>`:""}`; }).join("<br>");
+      const lib=BY_NAME[e.name.toLowerCase()]; return `${tag}<b>${prescr(e)}</b> ${esc(e.name)}${lib?` <span style="color:var(--muted)">· ${Object.entries(lib.hits).filter(h=>h[1].role==="main").map(h=>h[0]).join(", ")}</span>`:""}`; }).join("<br>");
     return `<div class="card">
       <div class="hist-top"><div><div class="hist-title">${esc(x.name)}</div>
         <div class="hist-meta">${x.exercises.length} exercises · ${x.exercises.reduce((a,e)=>a+e.sets,0)} sets · ~${estMinutes(x)} min${x.superset?" · supersets":""}</div></div>
@@ -1903,13 +1970,13 @@ $("#tplList").addEventListener("click",async e=>{
   const b=e.target.closest("button"); if(!b) return;
   const find=id=>templates().find(x=>x.id===id);
   if(b.dataset.tstart) startTemplate(b.dataset.tstart);
-  else if(b.dataset.tedit){ const t=find(b.dataset.tedit); tdraft=JSON.parse(JSON.stringify(t)); saveT(); renderEditor(); $("#editorCard").scrollIntoView({behavior:"smooth"}); }
+  else if(b.dataset.tedit){ bldOpen=null; const t=find(b.dataset.tedit); tdraft=JSON.parse(JSON.stringify(t)); saveT(); renderEditor(); $("#editorCard").scrollIntoView({behavior:"smooth"}); }
   else if(b.dataset.tdup){ const t=find(b.dataset.tdup); await persist({...JSON.parse(JSON.stringify(t)),id:uid(),name:t.name+" (copy)",createdAt:Date.now(),order:Date.now()}); toast("Session copied"); }
   else if(b.dataset.tdel){ const t=find(b.dataset.tdel); confirmBox("Delete session?",`“${t.name}” will be removed. Logged workouts stay.`,()=>removeItem(t.id)); }
   else if(b.dataset.freq){ const t=find(b.dataset.freq); const f=Math.min(7,Math.max(1,(t.freq||1)+(+b.dataset.d))); if(f!==t.freq) await persist({...t,freq:f}); }
 });
 $("#tplList").addEventListener("change",async e=>{ const c=e.target; if(c.dataset.inweek){ const t=templates().find(x=>x.id===c.dataset.inweek); await persist({...t,inWeek:c.checked}); } });
-$("#newTpl").onclick=()=>{ tdraft={type:"template",id:null,name:"",loc,superset:false,inWeek:true,freq:1,exercises:[]}; saveT(); renderEditor(); $("#editorCard").scrollIntoView({behavior:"smooth"}); };
+$("#newTpl").onclick=()=>{ bldOpen=null; tdraft={type:"template",id:null,name:"",loc,superset:false,inWeek:true,freq:1,exercises:[]}; saveT(); renderEditor(); $("#editorCard").scrollIntoView({behavior:"smooth"}); };
 function saveT(){ ls.set("liftlog.tdraft",tdraft); }
 function renderEditor(){
   const c=$("#editorCard");
@@ -1920,6 +1987,7 @@ function renderEditor(){
   c.innerHTML=`<h3 style="font-size:17px">${t.id?"Edit session":"New session"}</h3>
     <div class="fld" style="margin-bottom:12px"><label for="tName">Session name</label><input type="text" id="tName" value="${esc(t.name)}" placeholder="e.g. Upper body – quick"></div>
     <label class="switch" style="margin-bottom:14px" title="Pair exercises back-to-back (A1/A2) with shorter rest"><input type="checkbox" id="tSS" ${t.superset?"checked":""}> Supersets: pair exercises to save time</label>
+    ${builderHTML(t)}
     <div id="edRows">${t.exercises.map((e,i)=>{ const lib=BY_NAME[e.name.toLowerCase()];
       const tag=t.superset?`${String.fromCharCode(65+Math.floor(i/2))}${i%2+1} · `:"";
       return `<div class="ed-item">
@@ -1930,8 +1998,8 @@ function renderEditor(){
       </div>
       <div class="ed-grid">
         <div class="fld"><label for="es${i}">Sets</label><input id="es${i}" type="number" min="1" max="10" value="${e.sets}" data-es="${i}"></div>
-        <div class="fld"><label for="er${i}">Reps</label><input id="er${i}" type="text" value="${e.lo}–${e.hi}" data-er="${i}" placeholder="8–12"></div>
-        <div class="fld"><label for="ert${i}">Rest <span class="hl">min:sec</span></label><select id="ert${i}" data-erest="${i}">${restOpts(e.rest)}</select></div>
+        ${lib&&lib.cardio?`<div class="fld" style="grid-column:span 2"><label for="er${i}">Minutes</label><input id="er${i}" type="text" value="${e.lo===e.hi?e.lo:e.lo+"–"+e.hi}" data-er="${i}" placeholder="15–20"></div>`:`<div class="fld"><label for="er${i}">Reps</label><input id="er${i}" type="text" value="${e.lo}–${e.hi}" data-er="${i}" placeholder="8–12"></div>
+        <div class="fld"><label for="ert${i}">Rest <span class="hl">min:sec</span></label><select id="ert${i}" data-erest="${i}">${restOpts(e.rest)}</select></div>`}
       </div>
       <div class="hint" data-ehits="${i}" style="margin:8px 0 0">${lib?hitsHTML(lib,true):""}</div>
     </div>`; }).join("")}</div>
@@ -1943,10 +2011,125 @@ function renderEditor(){
     </div>
     <div class="row"><button class="btn" id="edCancel">Cancel</button><button class="btn primary grow" id="edSave">Save session</button></div>`;
 }
+/* ================= SESSION BUILDER: muscles to target, balanced ↔ aesthetics, core, cardio ================= */
+const B_MUSCLES=["Chest","Back","Shoulders","Biceps","Triceps","Forearms","Traps","Core","Quads","Hamstrings","Glutes","Calves"];
+const MUS_PATS={Chest:["hpush","inclinepush","fly"],Back:["vpull","hpull"],Shoulders:["lateral","vpush","reardelt"],Biceps:["biceps","hammer"],Triceps:["triceps"],Forearms:["forearm","hammer"],Traps:["shrug"],Core:["abs","obliques"],Quads:["squat","lunge","quadiso"],Hamstrings:["hinge","legcurl"],Glutes:["hipthrust","lunge"],Calves:["calves"]};
+// how much each muscle gains (or gives up) as the slider moves toward aesthetics
+const AES_W={Shoulders:1,Chest:.6,Back:.6,Biceps:.5,Triceps:.5,Core:.4,Traps:.2,Forearms:.1,Glutes:.1,Quads:-.35,Hamstrings:-.35,Calves:-.15};
+const BTYPES={
+  full:{label:"Full body",slots:[["squat","Quads",3],["hinge","Hamstrings",3],["hpush","Chest",3],["vpull","Back",3],["lateral","Shoulders",2],["biceps","Biceps",2],["triceps","Triceps",2]]},
+  upper:{label:"Upper body",slots:[["hpush","Chest",3],["vpull","Back",3],["vpush","Shoulders",3],["hpull","Back",3],["lateral","Shoulders",3],["biceps","Biceps",2],["triceps","Triceps",2]]},
+  lower:{label:"Lower body",slots:[["squat","Quads",3],["hinge","Hamstrings",3],["lunge","Glutes",3],["legcurl","Hamstrings",2],["hipthrust","Glutes",2],["calves","Calves",3]]},
+  push:{label:"Push",slots:[["hpush","Chest",3],["inclinepush","Chest",3],["vpush","Shoulders",3],["lateral","Shoulders",3],["triceps","Triceps",3]]},
+  pull:{label:"Pull",slots:[["vpull","Back",3],["hpull","Back",3],["reardelt","Shoulders",3],["biceps","Biceps",3],["hammer","Biceps",2]]}};
+const AES_TXT=["Balanced: even work for every muscle, legs included.",
+  "Mostly balanced, with a little extra for shoulders, upper chest and arms.",
+  "Half and half: extra side delts, upper chest, back width, arms and abs. Legs get a little less.",
+  "Mostly aesthetics: lots of side delts, upper chest, lats, arms and abs for the V-taper look.",
+  "Aesthetics: built around the V-taper and arms. Legs are kept to the essentials."];
+const B_DEF={type:"full",muscles:[],aes:0,core:true,cardio:"off",cardioMin:15};
+function bOpts(t){ t=t||tdraft; if(t&&!t.focus) t.focus=Object.assign({},B_DEF,S().focus||{}); return t?t.focus:Object.assign({},B_DEF); }
+function builderHTML(t){
+  const o=bOpts(t), empty=!t.exercises.some(x=>(x.name||"").trim()), open=bldOpen==null?empty:bldOpen;
+  const chip=(attr,v,on,label)=>`<button class="chip ${on?"on":""}" ${attr}="${v}" aria-pressed="${on}">${on?'<span class="ck">✓</span>':""}${label}</button>`;
+  return `<details class="bld" id="bld" ${open?"open":""}>
+    <summary><span class="bld-t"><span aria-hidden="true">✨ </span>Build it for me</span><span class="bld-s">Jim picks the exercises for your equipment and time</span></summary>
+    <div class="bld-b">
+      <div class="setup-l">Session type</div>
+      <div class="chips">${Object.entries(BTYPES).map(([k,v])=>chip("data-btype",k,o.type===k,v.label)).join("")}</div>
+      <div class="setup-l">Muscles to target most <span class="hl">pick up to 3</span></div>
+      <div class="chips">${B_MUSCLES.map(m=>chip("data-bmus",m,o.muscles.includes(m),m)).join("")}</div>
+      <div class="setup-l"><label for="bAes">Style</label></div>
+      <div class="bslider">
+        <input type="range" id="bAes" min="0" max="100" step="25" value="${o.aes}" aria-valuetext="${AES_TXT[Math.round(o.aes/25)]}">
+        <div class="bs-ends" aria-hidden="true"><span>Balanced</span><span>Aesthetics</span></div>
+        <p class="hint" id="bAesTxt" style="margin:6px 0 0">${AES_TXT[Math.round(o.aes/25)]}</p>
+      </div>
+      <label class="switch" style="margin-top:12px"><input type="checkbox" id="bCore" ${o.core?"checked":""}> ${o.aes>=50||o.muscles.includes("Core")?"Add core work (abs and obliques)":"Add core work (abs)"}</label>
+      <div class="setup-l">Cardio at the end</div>
+      <div class="row wrap-row" style="gap:10px">
+        <div class="seg" id="bCardio" role="group" aria-label="Cardio at the end">${[["off","None"],["steady","Steady"],["hiit","Intervals"]].map(([k,v])=>`<button data-bcardio="${k}" class="${o.cardio===k?"on":""}" aria-pressed="${o.cardio===k}">${v}</button>`).join("")}</div>
+        ${o.cardio!=="off"?`<label class="tr-f trange"><input type="number" id="bCmin" inputmode="numeric" min="5" max="60" step="5" value="${o.cardioMin}" aria-label="Cardio minutes"><span>min</span></label>`:""}
+      </div>
+      ${o.cardio!=="off"?`<p class="hint" style="margin:6px 0 0"><span>${o.cardio==="hiit"?"Short hard efforts with easy recovery in between.":"A pace where you can still talk."}</span> <span>Uses a cardio machine if you have one here, otherwise walking, jogging or a bodyweight circuit.</span></p>`:""}
+      <button class="btn primary block" id="bGo" style="margin-top:14px">${empty?"Build session":"Rebuild session"}</button>
+      <p class="hint" style="margin:8px 0 0">${(r=>r.lo||r.hi?`<span>Fits your usual ${rangeLabel(r)}.</span> `:"")(usualRange())}<span>You can change anything afterwards.</span></p>
+    </div>
+  </details>`;
+}
+function buildFocused(o){
+  const a=(+o.aes||0)/100, base=BTYPES[o.type]||BTYPES.full, foc=o.muscles.filter(m=>m!=="Core");
+  let slots=base.slots.map(([p,m,n])=>({p,m,n,f:false}));
+  if(a>=.5&&o.type==="full"){ const h=slots.find(x=>x.p==="hpush"); if(h) h.p="inclinepush"; }          // upper chest first
+  if(a>=.5&&(o.type==="full"||o.type==="upper")&&!slots.some(x=>x.p==="reardelt")) slots.splice(slots.findIndex(x=>x.p==="lateral")+1,0,{p:"reardelt",m:"Shoulders",n:2,f:false}); // rounder shoulders
+  if(a>=.5&&o.type==="push"){ const v=slots.find(x=>x.p==="vpush"); if(v) v.n=2; }
+  // the muscles you picked: an extra exercise and more sets, trained first
+  for(const m of foc){
+    const mine=slots.filter(x=>x.m===m); mine.forEach(x=>{ x.n=Math.min(5,x.n+1); x.f=true; });
+    const used=new Set(slots.map(x=>x.p)); const extra=(MUS_PATS[m]||[]).filter(pp=>!used.has(pp));
+    // a new movement for it (never a near-copy of one already in): 2 if it wasn't in this session at all, 1 if it only had one
+    extra.slice(0,mine.length?(mine.length>=2?0:1):2).forEach(pp=>slots.push({p:pp,m,n:3,f:true}));
+  }
+  // slider: more sets for show muscles, fewer for legs (never below 2, never above 5)
+  slots.forEach(x=>{ x.n=Math.max(x.f?3:2,Math.min(5,Math.round(x.n*(1+a*(AES_W[x.m]||0))))); });
+  const comp=x=>!!PATTERNS[x.p].c;
+  slots=[...slots.filter(x=>comp(x)&&x.f),...slots.filter(x=>comp(x)&&!x.f),...slots.filter(x=>!comp(x)&&x.f),...slots.filter(x=>!comp(x)&&!x.f)];
+  // core and cardio go last
+  const coreFoc=o.muscles.includes("Core");
+  if(o.core||coreFoc){ slots.push({p:"abs",m:"Core",n:2+(a>=.5?1:0)+(coreFoc?1:0),f:true}); if(a>=.5||coreFoc) slots.push({p:"obliques",m:"Core",n:2+(coreFoc?1:0),f:true}); } // you asked for it: kept when trimming for time
+  const SS=S(), used=new Set(), exs=[], missing=new Set();
+  for(const x of slots){
+    let e=pick(x.p,used); if(!e) for(const alt of MUS_PATS[x.m]||[]){ e=pick(alt,used); if(e) break; }
+    if(!e){ missing.add(x.m); continue; } used.add(e.slug);
+    const P=PATTERNS[SLUG2PAT[e.slug]]||PATTERNS[x.p], c=!!P.c, bw=e.eq==="bw";
+    exs.push({...(x.m==="Core"?{keep:true}:{}),name:e.name,slug:e.slug,sets:x.n,lo:bw?8:(c?SS.compLo:SS.isoLo),hi:bw?20:(c?SS.compHi:SS.isoHi),rest:c?SS.compRest:SS.isoRest,_pr:(1+a*(AES_W[x.m]||0))+(x.f?1:0)+(c?.3:0),_f:x.f,_c:c});
+  }
+  if(o.cardio!=="off"){ const e=pick(o.cardio==="hiit"?"hiit":"cardio",used); const mn=Math.max(5,Math.min(60,+o.cardioMin||15)); if(e) exs.push({name:e.name,slug:e.slug,sets:1,lo:mn,hi:mn,rest:0}); }
+  // keep it to your time (about 70 min if you haven't set one), trimming the least important work first so your focus survives
+  const r=usualRange(), cap=r.hi||70, ss=tdraft&&tdraft.superset, est=()=>estMinutes({exercises:exs,superset:ss}); let g=0;
+  const lift=()=>exs.filter(x=>!isCardio(x.name));
+  const trim=(floor,focusToo)=>{ while(est()>cap&&g++<300){ const x=lift().filter(x=>x.sets>floor&&(focusToo||!x._f)).sort((a,b)=>a._pr-b._pr||b.sets-a.sets)[0]; if(!x) break; x.sets--; } };
+  trim(3,false); trim(2,false);
+  while(est()>cap&&g++<400){ const x=lift().filter(x=>!x._f&&!x._c).sort((a,b)=>a._pr-b._pr)[0]; if(!x) break; exs.splice(exs.indexOf(x),1); }   // drop the least important accessories
+  trim(3,true); trim(2,true);
+  exs.forEach(x=>{ delete x._pr; delete x._f; delete x._c; });
+  const fitted=tailorTime(exs,cap,ss,r.lo).exs;
+  return {exs:fitted,missing:[...missing]};
+}
+function saveFocus(o){ if(demo||DEMO_ONLY) return; settings=Object.assign({},settings,{focus:{...o,muscles:[...o.muscles]}}); ls.set("liftlog.settings",settings); if(typeof sdraft!=="undefined"&&sdraft) sdraft.focus=settings.focus; persist({type:"settings",id:"settings",...settings,updatedAt:Date.now()}).catch(()=>{}); }
+function runBuilder(){
+  const o=bOpts(), r=buildFocused(o);
+  if(!r.exs.length){ toast("No exercises match your equipment here. Add equipment in Your setup."); return; }
+  const go=()=>{ tdraft.exercises=r.exs; if(!tdraft.name.trim()||tdraft.autoName){ tdraft.name=BTYPES[o.type].label+(o.muscles.length?" · "+o.muscles.join(" & "):o.aes>=50?" · aesthetics":""); tdraft.autoName=true; }
+    saveT(); saveFocus(o); renderEditor();
+    toast(`Built ${r.exs.length} exercises · ~${estMinutes(tdraft)} min`+(r.missing.length?` · no equipment here for ${r.missing.join(", ")}`:""));
+    const rows=$("#edRows"); if(rows) rows.scrollIntoView({behavior:"smooth",block:"start"}); };
+  if(tdraft.exercises.some(x=>(x.name||"").trim())) confirmBox("Replace the exercises?","Jim will swap this session's exercises for a new set built from your choices.",go,"Replace"); else go();
+}
+$("#editorCard").addEventListener("click",e=>{
+  const b=e.target.closest("[data-btype],[data-bmus],[data-bcardio],#bGo"); if(!b||!tdraft) return; const o=bOpts();
+  if(b.id==="bGo"){ runBuilder(); return; }
+  if(b.dataset.btype) o.type=b.dataset.btype;
+  else if(b.dataset.bmus){ const m=b.dataset.bmus; if(o.muscles.includes(m)) o.muscles=o.muscles.filter(x=>x!==m); else if(o.muscles.length>=3){ toast("Pick up to 3 muscles. Tap one to remove it."); return; } else o.muscles=[...o.muscles,m]; }
+  else if(b.dataset.bcardio) o.cardio=b.dataset.bcardio;
+  const attr=["data-btype","data-bmus","data-bcardio"].find(a=>b.hasAttribute(a)), val=b.getAttribute(attr);
+  saveT(); renderEditor(); const again=[...$$("#bld ["+attr+"]")].find(x=>x.getAttribute(attr)===val); if(again) again.focus();
+});
+$("#editorCard").addEventListener("input",e=>{
+  const t=e.target; if(!tdraft) return; const o=bOpts();
+  if(t.id==="bAes"){ o.aes=+t.value; const i=Math.round(o.aes/25); $("#bAesTxt").textContent=trText(AES_TXT[i]); t.setAttribute("aria-valuetext",AES_TXT[i]); saveT(); }
+  else if(t.id==="bCmin"){ o.cardioMin=Math.max(5,Math.min(60,parseInt(t.value)||15)); saveT(); }
+});
+$("#editorCard").addEventListener("change",e=>{
+  const t=e.target; if(!tdraft) return; const o=bOpts();
+  if(t.id==="bCore"){ o.core=t.checked; saveT(); }
+  else if(t.id==="bAes"){ saveT(); renderEditor(); $("#bAes")?.focus(); }   // updates the core label
+});
+$("#editorCard").addEventListener("toggle",e=>{ if(e.target.id==="bld") bldOpen=e.target.open; },true);
 const parseRange=v=>{ const m=String(v).match(/(\d+)\D+(\d+)/); if(m){ const a=+m[1],b=+m[2]; return [Math.min(a,b),Math.max(a,b)]; } const n=parseInt(v); return n?[n,n]:[8,12]; };
 $("#editorCard").addEventListener("input",e=>{
   const t=e.target; if(!tdraft) return;
-  if(t.id==="tName") tdraft.name=t.value;
+  if(t.id==="tName"){ tdraft.name=t.value; tdraft.autoName=false; }
   else if(t.dataset.en!=null){ const i=+t.dataset.en; tdraft.exercises[i].name=t.value; const lib=BY_NAME[t.value.toLowerCase()]; const h=$(`[data-ehits="${i}"]`); if(h) h.innerHTML=lib?hitsHTML(lib,true):""; }
   else if(t.dataset.es!=null) tdraft.exercises[+t.dataset.es].sets=Math.max(1,Math.min(10,parseInt(t.value)||1));
   else if(t.dataset.er!=null){ const [lo,hi]=parseRange(t.value); Object.assign(tdraft.exercises[+t.dataset.er],{lo,hi}); }
@@ -1992,7 +2175,7 @@ let exForm = null; // custom exercise being created/edited
 function renderLibrary(){
   const av = $("#libAll").checked ? new Set(EQ_ORDER) : availEq();
   const ck=on=>on?'<span class="ck">✓</span>':"";
-  $("#muscleChips").innerHTML = [["all","All"],["plyo","⚡ Plyo & sport"],...VG_ORDER.map(g=>[g,g])].map(([k,v])=>{ const on=k==="all"?!libMs.length:libMs.includes(k); return `<button class="chip ${on?"on":""}" data-m="${k}" aria-pressed="${on}">${k!=="all"?ck(on):""}${v}</button>`; }).join("");
+  $("#muscleChips").innerHTML = [["all","All"],["cardio","❤️ Cardio"],["plyo","⚡ Plyo & sport"],...VG_ORDER.map(g=>[g,g])].map(([k,v])=>{ const on=k==="all"?!libMs.length:libMs.includes(k); return `<button class="chip ${on?"on":""}" data-m="${k}" aria-pressed="${on}">${k!=="all"?ck(on):""}${v}</button>`; }).join("");
   $$("#libMatch button").forEach(b=>b.classList.toggle("on",b.dataset.mm===libMatch)); $("#libMatch").style.visibility=libMs.length>1?"visible":"hidden";
   const eqs=EQ_ORDER.filter(e=>av.has(e));
   libEqs=libEqs.filter(e=>av.has(e));
@@ -2000,15 +2183,15 @@ function renderLibrary(){
   $("#mechChips").innerHTML = [`<button class="chip ${!libMech.length?"on":""}" data-mc="">Any</button>`,...[["C","Compound"],["I","Isolation"]].map(([k,v])=>{ const on=libMech.includes(k); return `<button class="chip ${on?"on":""}" data-mc="${k}" aria-pressed="${on}">${ck(on)}${v}</button>`; })].join("");
   $("#diffChips").innerHTML = [`<button class="chip ${!libDiff.length?"on":""}" data-df="">Any</button>`,...DIFFS.map(k=>{ const on=libDiff.includes(k); return `<button class="chip ${on?"on":""}" data-df="${k}" aria-pressed="${on}">${ck(on)}${k}</button>`; })].join("");
   $("#libAdv").checked=libAdv;
-  const subGroups=VG_ORDER.filter(g=>REGIONS[g]&&REGIONS[g].length&&(!libMs.filter(m=>m!=="plyo").length||libMs.includes(g)));
+  const subGroups=VG_ORDER.filter(g=>REGIONS[g]&&REGIONS[g].length&&(!libMs.filter(m=>m!=="plyo"&&m!=="cardio").length||libMs.includes(g)));
   if(!libAdv) libSubs=[];
   const subCount=k=>{ const [g,r]=k.split("|"); return LIB.filter(x=>(av.has(x.eq)||x.custom)&&x.hits[g]&&x.hits[g].regions.includes(r)).length; };
   $("#subWrap").innerHTML = libAdv ? `<label class="f">Subgroup <span class="hl" style="font-weight:500;color:var(--muted)">from MuscleWiki's Advanced view</span></label><div class="subrows">${subGroups.map(g=>`<div class="subrow"><span class="sg">${g}</span><div class="chips">${REGIONS[g].map(r=>{ const k=g+"|"+r, on=libSubs.includes(k), n=subCount(k); return `<button class="chip sm ${on?"on":""}" data-sub="${k}" aria-pressed="${on}" ${!n&&!on?"disabled":""}>${on?'<span class="ck">✓</span>':""}${r} <span class="cnt">${n}</span></button>`; }).join("")}</div></div>`).join("")}</div>` : "";
-  const act=[...libMs.map(m=>[`m`,m,m==="plyo"?"⚡ Plyo & sport":m]),...libSubs.map(k=>["sub",k,k.replace("|",": ")]),...libEqs.map(e=>["e",e,EQ[e]]),...libMech.map(k=>["mc",k,k==="C"?"Compound":"Isolation"]),...libDiff.map(k=>["df",k,k])];
+  const act=[...libMs.map(m=>[`m`,m,m==="plyo"?"⚡ Plyo & sport":m==="cardio"?"❤️ Cardio":m]),...libSubs.map(k=>["sub",k,k.replace("|",": ")]),...libEqs.map(e=>["e",e,EQ[e]]),...libMech.map(k=>["mc",k,k==="C"?"Compound":"Isolation"]),...libDiff.map(k=>["df",k,k])];
   $("#libActive").innerHTML = act.length ? `<span class="hint" style="margin:0">${act.length} filter${act.length===1?"":"s"}:</span>${act.map(([t,k,v])=>`<button class="chip sm on" data-rm="${t}|${k}" title="Remove">${esc(v)} ✕</button>`).join("")}<button class="btn sm ghost" data-rm="all">Clear all</button>` : "";
   const q=$("#libSearch").value.trim().toLowerCase();
   const tops=topPicks();
-  let list=LIB.filter(x=>(av.has(x.eq)||x.custom) && (!libEqs.length||libEqs.includes(x.eq)) && (!libMech.length||libMech.includes(x.mech)) && (!libDiff.length||libDiff.includes(x.diff)) && (!libMs.length||(libMatch==="all"?libMs.every:libMs.some).call(libMs,m=>m==="plyo"?x.plyo:x.hits[m])) && (!libSubs.length||libSubs.some(k=>{ const [g,r]=k.split("|"); return x.hits[g]&&x.hits[g].regions.includes(r); })) && (!q||x.name.toLowerCase().includes(q)));
+  let list=LIB.filter(x=>(av.has(x.eq)||x.custom) && (!libEqs.length||libEqs.includes(x.eq)) && (!libMech.length||libMech.includes(x.mech)) && (!libDiff.length||libDiff.includes(x.diff)) && (!libMs.length||(libMatch==="all"?libMs.every:libMs.some).call(libMs,m=>m==="plyo"?x.plyo:m==="cardio"?x.cardio:x.hits[m])) && (!libSubs.length||libSubs.some(k=>{ const [g,r]=k.split("|"); return x.hits[g]&&x.hits[g].regions.includes(r); })) && (!q||x.name.toLowerCase().includes(q)));
   const mainFirst=x=>libMs.reduce((a,m)=>a+(x.hits[m]?.role==="main"?1:0),0);
   list.sort((a,b)=> (b.custom?1:0)-(a.custom?1:0) || mainFirst(b)-mainFirst(a) || (tops.has(b.slug)-tops.has(a.slug)) || EQ_ORDER.indexOf(a.eq)-EQ_ORDER.indexOf(b.eq) || a.name.localeCompare(b.name));
   $("#libCount").textContent=list.length+" exercises";
@@ -2018,11 +2201,11 @@ function renderLibrary(){
   renderExForm();
   $("#libList").innerHTML = list.length ? list.map(x=>`<div class="lib-item">
       <div class="grow">${!linkable(x)?`<span class="lib-name">${esc(x.name)}</span>`:`<a class="lib-name" href="${mwUrl(x.slug)}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none">${esc(x.name)} <span style="color:var(--muted);font-weight:500">↗</span></a>`}
-        <div class="lib-meta">${x.custom?'<span class="badge star">Your exercise</span>':""}${x.plyo?'<span class="badge star">⚡ Plyo</span>':""}${x.ll?'<span class="badge">Jim drill</span>':""}${x.edited?'<span class="badge star">Muscles edited</span>':""}${tops.has(x.slug)?'<span class="badge star">★ Top pick</span>':""}<span class="badge">${EQ[x.eq]||"Other"}</span>${x.diff?`<span class="badge">${x.diff}</span>`:""}${x.mech?`<span class="badge">${x.mech==="C"?"Compound":"Isolation"}</span>`:""}</div>
+        <div class="lib-meta">${x.custom?'<span class="badge star">Your exercise</span>':""}${x.cardio?'<span class="badge star">❤️ Cardio</span>':""}${x.plyo?'<span class="badge star">⚡ Plyo</span>':""}${x.ll&&!x.cardio?'<span class="badge">Jim drill</span>':""}${x.edited?'<span class="badge star">Muscles edited</span>':""}${tops.has(x.slug)?'<span class="badge star">★ Top pick</span>':""}<span class="badge">${EQ[x.eq]||"Other"}</span>${x.diff?`<span class="badge">${x.diff}</span>`:""}${x.mech?`<span class="badge">${x.mech==="C"?"Compound":"Isolation"}</span>`:""}</div>
         ${hitsHTML(x)}
         ${NOTES[x.slug]?`<div class="lib-note">${NOTES[x.slug]}</div>`:""}
         ${mwCredit(x)}
-        <button class="btn ghost" style="padding:4px 0;font-size:13px" data-editmus="${esc(x.slug)}">${x.custom?"Edit exercise":"Edit muscles"}</button></div>
+        ${x.cardio?'<div class="lib-note">Logged in minutes.</div>':`<button class="btn ghost" style="padding:4px 0;font-size:13px" data-editmus="${esc(x.slug)}">${x.custom?"Edit exercise":"Edit muscles"}</button>`}</div>
       <div class="row" style="gap:4px;flex-shrink:0;flex-direction:column;align-items:stretch">
         <button class="btn sm" data-addlog="${esc(x.slug)}" title="Add to today's workout">+ Log</button>
         <button class="btn sm" data-addtpl="${esc(x.slug)}" title="Add to a session you're building">+ Session</button>
@@ -2095,7 +2278,7 @@ function libAddBtn(b){
   if(b.dataset.addlog){ addToLog(x.name); renderLog(); toast(`${x.name} added to today's workout`); }
   else { if(!tdraft){ tdraft={type:"template",id:null,name:"",loc,superset:false,inWeek:true,freq:1,exercises:[]}; }
     const iso = x.mech ? x.mech==="I" : !["squat","lunge","hinge","hipthrust","hpush","inclinepush","vpush","hpull","vpull"].some(p=>PATTERNS[p].l.includes(x.slug));
-    const bw=x.eq==="bw"; const SS=S(); tdraft.exercises.push(x.plyo?{name:x.name,slug:x.slug,sets:3,lo:3,hi:6,rest:120}:{name:x.name,slug:x.slug,sets:3,lo:bw?8:(iso?SS.isoLo:SS.compLo),hi:bw?20:(iso?SS.isoHi:SS.compHi),rest:iso?SS.isoRest:SS.compRest});
+    const bw=x.eq==="bw"; const SS=S(); tdraft.exercises.push(x.cardio?{name:x.name,slug:x.slug,sets:1,lo:15,hi:20,rest:0}:x.plyo?{name:x.name,slug:x.slug,sets:3,lo:3,hi:6,rest:120}:{name:x.name,slug:x.slug,sets:3,lo:bw?8:(iso?SS.isoLo:SS.compLo),hi:bw?20:(iso?SS.isoHi:SS.compHi),rest:iso?SS.isoRest:SS.compRest});
     saveT(); renderEditor(); toast(`${x.name} added to ${tdraft.name||"new session"}`); }
 }
 $("#view-library").addEventListener("click",e=>{ const b=e.target.closest("#libDone"); if(!b) return; const t=libTarget; libTarget=null; showTab(t==="tpl"?"plan":"log"); });
@@ -2428,7 +2611,7 @@ function renderLogVol(){
 }
 let grpSel=ls.get("liftlog.grp","all");
 function renderExPicker(){
-  const names=allExerciseNames();
+  const names=allExerciseNames().filter(n=>!isCardio(n));   // cardio has no weight to chart
   const role=(n,g)=>BY_NAME[n.toLowerCase()]?.hits?.[g]?.role;
   const groups=VG_ORDER.filter(g=>names.some(n=>role(n,g)));
   if(grpSel!=="all" && !groups.includes(grpSel)) grpSel="all";
@@ -2445,7 +2628,7 @@ function renderExPicker(){
 }
 $("#grpPick").onchange=e=>{ grpSel=e.target.value; ls.set("liftlog.grp",grpSel); $("#exPick").value=""; ls.set("liftlog.pick",grpSel==="all"?"":"__group__"); renderExPicker(); renderExercise(); };
 function renderExPickerAll(){
-  const names=allExerciseNames().sort((a,b)=>a.localeCompare(b)); const sel=$("#exPick"); const cur=sel.value||ls.get("liftlog.pick","");
+  const names=allExerciseNames().filter(n=>!isCardio(n)).sort((a,b)=>a.localeCompare(b)); const sel=$("#exPick"); const cur=sel.value||ls.get("liftlog.pick","");
   const freq={}; workouts().forEach(w=>w.exercises.forEach(e=>{freq[e.name]=(freq[e.name]||0)+1;}));
   sel.innerHTML=names.map(n=>`<option>${esc(n)}</option>`).join("");
   if(names.includes(cur)) sel.value=cur; else if(names.length) sel.value=names.slice().sort((a,b)=>(freq[b]||0)-(freq[a]||0))[0];
@@ -2867,7 +3050,7 @@ function renderHome(){
       <div class="week-dots" title="${ns.done} of ${ns.total} this week">${Array.from({length:ns.total},(_,k)=>`<i class="${k<ns.done?"on":""}"></i>`).join("")}</div>
       <ul style="margin-top:10px">${t.exercises.slice(0,6).map(x=>{ const c=cmap.get(x.name.toLowerCase()); const ss=sessionsFor(x.name); const lw2=ss.length?ss[ss.length-1]:null;
         const w=c&&c.w?fmt5(c.w)+" "+unit:lw2&&lw2.top?fmtW(lw2.top)+" "+unit:"";
-        return `<li><span>${esc(x.name)}<span style="color:var(--muted)"> · ${x.sets}×${x.lo}–${x.hi}</span></span><span class="w">${w?(c&&c.k==="up"?"↑ ":c&&(c.k==="down"||c.k==="stall")?"↓ ":"")+w:""}</span></li>`; }).join("")}${t.exercises.length>6?`<li><span style="color:var(--muted)">+${t.exercises.length-6} more</span></li>`:""}</ul>
+        return `<li><span>${esc(x.name)}<span style="color:var(--muted)"> · ${prescr(x)}</span></span><span class="w">${w?(c&&c.k==="up"?"↑ ":c&&(c.k==="down"||c.k==="stall")?"↓ ":"")+w:""}</span></li>`; }).join("")}${t.exercises.length>6?`<li><span style="color:var(--muted)">+${t.exercises.length-6} more</span></li>`:""}</ul>
       <button class="btn primary" data-tstart="${esc(t.id)}">Start with Jim →</button></div>`; }
   else if(ns.total) today=`<div class="card today"><div class="eyebrow">This week</div><h3>All sessions done ✅</h3><div class="meta">${ns.done} of ${ns.total} sessions. Recovery is part of the plan.</div><div class="week-dots">${Array.from({length:ns.total},()=>`<i class="on"></i>`).join("")}</div><button class="btn" data-go="plan" style="margin-top:12px">See my plan</button></div>`;
   else today=`<div class="card today"><div class="eyebrow">Your plan</div><h3>Let Jim build your week</h3><div class="meta">Pick a split and mark sessions “In my week”. Jim will line up the next one here.</div><button class="btn primary" data-go="plan">Choose a split →</button></div>`;
@@ -3103,7 +3286,46 @@ window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()
 const LANGS=[["en","English"],["es","Español"],["fr","Français"],["pt","Português"],["hi","हिन्दी"],["ar","العربية"],["zh","中文（普通话）"]];
 const LIX={es:0,fr:1,pt:2,hi:3,ar:4,zh:5};
 // one line per string: English|Spanish|French|Portuguese|Hindi|Arabic|Mandarin
-const I18N_RAW=`Train|Entrenar|Entraîner|Treinar|ट्रेन|تمرّن|训练
+const I18N_RAW=`Cardio machines|Máquinas de cardio|Machines cardio|Máquinas de cardio|कार्डियो मशीनें|أجهزة الكارديو|有氧器械
+Build it for me|Créala por mí|Crée-la pour moi|Monte para mim|मेरे लिए बनाओ|اصنعها لي|帮我生成
+Jim picks the exercises for your equipment and time|Jim elige los ejercicios según tu equipo y tu tiempo|Jim choisit les exercices selon ton matériel et ton temps|Jim escolhe os exercícios para o seu equipamento e tempo|Jim आपके उपकरण और समय के हिसाब से एक्सरसाइज़ चुनता है|يختار Jim التمارين حسب معداتك ووقتك|Jim 会根据你的器械和时间挑选动作
+Session type|Tipo de sesión|Type de séance|Tipo de sessão|सेशन का प्रकार|نوع الجلسة|训练类型
+Full body|Cuerpo completo|Corps entier|Corpo inteiro|फुल बॉडी|الجسم كاملًا|全身
+Upper body|Tren superior|Haut du corps|Parte superior|अपर बॉडी|الجزء العلوي|上肢
+Lower body|Tren inferior|Bas du corps|Parte inferior|लोअर बॉडी|الجزء السفلي|下肢
+Push|Empuje|Poussée|Empurrar|पुश|دفع|推
+Pull|Tirón|Tirage|Puxar|पुल|سحب|拉
+Muscles to target most|Músculos a priorizar|Muscles à cibler en priorité|Músculos para focar mais|सबसे ज़्यादा किन मांसपेशियों पर ध्यान दें|العضلات التي تريد التركيز عليها|最想练的肌肉
+pick up to 3|elige hasta 3|jusqu'à 3|escolha até 3|3 तक चुनें|اختر حتى 3|最多选 3 个
+Style|Estilo|Style|Estilo|स्टाइल|الأسلوب|风格
+Balanced|Equilibrado|Équilibré|Equilibrado|संतुलित|متوازن|均衡
+Aesthetics|Estética|Esthétique|Estética|एस्थेटिक्स|جمالي|美感
+Balanced: even work for every muscle, legs included.|Equilibrado: el mismo trabajo para cada músculo, piernas incluidas.|Équilibré : autant de travail pour chaque muscle, jambes comprises.|Equilibrado: o mesmo trabalho para cada músculo, pernas incluídas.|संतुलित: हर मांसपेशी पर बराबर काम, पैर भी।|متوازن: عمل متساوٍ لكل عضلة، بما فيها الساقان.|均衡：每块肌肉练得一样多，包括腿。
+Mostly balanced, with a little extra for shoulders, upper chest and arms.|Casi equilibrado, con un poco más de hombros, pecho superior y brazos.|Plutôt équilibré, avec un peu plus d'épaules, de haut des pectoraux et de bras.|Quase equilibrado, com um pouco mais de ombros, peitoral superior e braços.|ज़्यादातर संतुलित, कंधों, ऊपरी छाती और बाजुओं पर थोड़ा ज़्यादा।|متوازن غالبًا، مع قليل من الإضافة للأكتاف وأعلى الصدر والذراعين.|基本均衡，肩、上胸和手臂稍多一点。
+Half and half: extra side delts, upper chest, back width, arms and abs. Legs get a little less.|Mitad y mitad: más deltoides laterales, pecho superior, espalda ancha, brazos y abdomen. Las piernas, un poco menos.|Moitié-moitié : plus de deltoïdes latéraux, haut des pectoraux, largeur du dos, bras et abdos. Un peu moins de jambes.|Meio a meio: mais deltoides laterais, peitoral superior, largura das costas, braços e abdômen. Pernas um pouco menos.|आधा-आधा: साइड डेल्ट्स, ऊपरी छाती, पीठ की चौड़ाई, बाजू और एब्स पर ज़्यादा। पैरों पर थोड़ा कम।|نصف ونصف: المزيد للأكتاف الجانبية وأعلى الصدر وعرض الظهر والذراعين والبطن. أقل قليلًا للساقين.|一半一半：侧三角肌、上胸、背宽、手臂和腹肌多一些，腿稍少一点。
+Mostly aesthetics: lots of side delts, upper chest, lats, arms and abs for the V-taper look.|Casi todo estética: mucho deltoides lateral, pecho superior, dorsales, brazos y abdomen para la forma en V.|Surtout esthétique : beaucoup de deltoïdes latéraux, haut des pectoraux, dorsaux, bras et abdos pour le look en V.|Mais estética: muito deltoide lateral, peitoral superior, dorsais, braços e abdômen para o formato em V.|ज़्यादातर एस्थेटिक्स: V-शेप लुक के लिए साइड डेल्ट्स, ऊपरी छाती, लैट्स, बाजू और एब्स पर बहुत काम।|جمالي غالبًا: الكثير للأكتاف الجانبية وأعلى الصدر والظهر العريض والذراعين والبطن لشكل حرف V.|偏美感：大量练侧三角肌、上胸、背阔肌、手臂和腹肌，打造倒三角。
+Aesthetics: built around the V-taper and arms. Legs are kept to the essentials.|Estética: pensado para la forma en V y los brazos. Las piernas, lo esencial.|Esthétique : construit autour du V et des bras. Les jambes, l'essentiel.|Estética: feito em torno do formato em V e dos braços. Pernas só o essencial.|एस्थेटिक्स: V-शेप और बाजुओं पर आधारित। पैरों पर सिर्फ़ ज़रूरी काम।|جمالي: مبني حول شكل حرف V والذراعين. الساقان بالحد الأساسي.|美感：围绕倒三角和手臂设计，腿只练必需的部分。
+Add core work (abs)|Añadir core (abdominales)|Ajouter du gainage (abdos)|Adicionar core (abdômen)|कोर जोड़ें (एब्स)|إضافة تمارين الجذع (البطن)|加入核心训练（腹肌）
+Add core work (abs and obliques)|Añadir core (abdominales y oblicuos)|Ajouter du gainage (abdos et obliques)|Adicionar core (abdômen e oblíquos)|कोर जोड़ें (एब्स और ऑब्लिक्स)|إضافة تمارين الجذع (البطن والجانبين)|加入核心训练（腹肌和腹斜肌）
+Cardio at the end|Cardio al final|Cardio à la fin|Cardio no final|आख़िर में कार्डियो|كارديو في النهاية|最后做有氧
+None|Ninguno|Aucun|Nenhum|कोई नहीं|لا شيء|无
+Steady|Constante|Régulier|Constante|स्थिर|ثابت|匀速
+Intervals|Intervalos|Intervalles|Intervalos|इंटरवल|فترات|间歇
+min|min|min|min|मिनट|دقيقة|分钟
+Short hard efforts with easy recovery in between.|Esfuerzos cortos e intensos con recuperación suave entre medias.|Efforts courts et intenses avec récupération facile entre les deux.|Esforços curtos e intensos com recuperação leve entre eles.|छोटे तेज़ प्रयास, बीच में आसान रिकवरी।|مجهودات قصيرة وقوية مع استشفاء سهل بينها.|短时间高强度，中间轻松恢复。
+A pace where you can still talk.|Un ritmo en el que aún puedas hablar.|Un rythme où tu peux encore parler.|Um ritmo em que você ainda consegue falar.|ऐसी रफ़्तार जिसमें आप बात कर सकें।|وتيرة تستطيع معها الكلام.|还能说话的节奏。
+Uses a cardio machine if you have one here, otherwise walking, jogging or a bodyweight circuit.|Usa una máquina de cardio si tienes una aquí; si no, caminar, trotar o un circuito con tu peso.|Utilise une machine cardio si tu en as une ici, sinon marche, footing ou circuit au poids du corps.|Usa uma máquina de cardio se você tiver uma aqui; senão, caminhada, corrida leve ou circuito com o peso do corpo.|अगर यहाँ कार्डियो मशीन है तो वही, वरना चलना, जॉगिंग या बॉडीवेट सर्किट।|يستخدم جهاز كارديو إن وُجد هنا، وإلا فالمشي أو الهرولة أو دائرة بوزن الجسم.|有有氧器械就用器械，没有就快走、慢跑或自重循环。
+Build session|Crear sesión|Créer la séance|Montar sessão|सेशन बनाएँ|إنشاء الجلسة|生成训练
+Rebuild session|Volver a crear la sesión|Recréer la séance|Montar de novo|सेशन फिर से बनाएँ|إعادة إنشاء الجلسة|重新生成
+You can change anything afterwards.|Después puedes cambiar lo que quieras.|Tu peux tout modifier ensuite.|Depois você pode mudar o que quiser.|बाद में आप कुछ भी बदल सकते हैं।|يمكنك تغيير أي شيء بعد ذلك.|之后可以随意修改。
+Minutes|Minutos|Minutes|Minutos|मिनट|الدقائق|分钟
+❤️ Cardio|❤️ Cardio|❤️ Cardio|❤️ Cardio|❤️ कार्डियो|❤️ كارديو|❤️ 有氧
+Logged in minutes.|Se registra en minutos.|Enregistré en minutes.|Registrado em minutos.|मिनटों में दर्ज होता है।|يُسجَّل بالدقائق.|按分钟记录。
+Pick up to 3 muscles. Tap one to remove it.|Elige hasta 3 músculos. Toca uno para quitarlo.|Choisis jusqu'à 3 muscles. Touche-en un pour le retirer.|Escolha até 3 músculos. Toque em um para remover.|3 मांसपेशियों तक चुनें। हटाने के लिए किसी पर टैप करें।|اختر حتى 3 عضلات. اضغط على واحدة لإزالتها.|最多选 3 块肌肉，点一下可取消。
+Replace the exercises?|¿Reemplazar los ejercicios?|Remplacer les exercices ?|Substituir os exercícios?|एक्सरसाइज़ बदलें?|استبدال التمارين؟|替换动作？
+Jim will swap this session's exercises for a new set built from your choices.|Jim cambiará los ejercicios de esta sesión por unos nuevos según lo que elegiste.|Jim va remplacer les exercices de cette séance par de nouveaux, selon tes choix.|Jim vai trocar os exercícios desta sessão por novos, conforme suas escolhas.|Jim इस सेशन की एक्सरसाइज़ आपकी पसंद के हिसाब से नई एक्सरसाइज़ से बदल देगा।|سيستبدل Jim تمارين هذه الجلسة بأخرى جديدة حسب اختياراتك.|Jim 会按你的选择换上一组新动作。
+No exercises match your equipment here. Add equipment in Your setup.|Ningún ejercicio encaja con tu equipo aquí. Añade equipo en Tu configuración.|Aucun exercice ne correspond à ton matériel ici. Ajoute du matériel dans Ta configuration.|Nenhum exercício combina com seu equipamento aqui. Adicione equipamento em Sua configuração.|यहाँ आपके उपकरण से कोई एक्सरसाइज़ मेल नहीं खाती। अपने सेटअप में उपकरण जोड़ें।|لا توجد تمارين تناسب معداتك هنا. أضف معدات في إعداداتك.|没有适合你这里器械的动作，请在“你的设置”里添加器械。
+Train|Entrenar|Entraîner|Treinar|ट्रेन|تمرّن|训练
 Plan|Plan|Plan|Plano|प्लान|الخطة|计划
 Progress|Progreso|Progrès|Progresso|प्रगति|التقدم|进度
 More|Más|Plus|Mais|और|المزيد|更多
@@ -3495,6 +3717,7 @@ const I18N_P=[
  [/^Last (\d+) weeks$/,["Últimas $1 semanas","$1 dernières semaines","Últimas $1 semanas","पिछले $1 हफ़्ते","آخر $1 أسابيع","最近 $1 周"]],
  [/^(kg|lb) lifted$/,["$1 levantados","$1 soulevés","$1 levantados","$1 उठाया","$1 مرفوعة","已举起 $1"]],
  [/^(.+) added to today's workout$/,["$1 añadido al entrenamiento de hoy","$1 ajouté à la séance du jour","$1 adicionado ao treino de hoje","$1 आज के वर्कआउट में जोड़ा गया","أُضيف $1 إلى تمرين اليوم","已将 $1 加入今日训练"]],
+ [/^Built (\d+) exercises · ~(\d+) min$/,["$1 ejercicios · ~$2 min","$1 exercices · ~$2 min","$1 exercícios · ~$2 min","$1 एक्सरसाइज़ · ~$2 मिनट","$1 تمارين · ~$2 دقيقة","已生成 $1 个动作 · 约 $2 分钟"]],
  [/^Setup: (.+)$/,["Lugar: $1","Lieu : $1","Local: $1","सेटअप: $1","المكان: $1","训练地点：$1"]]
 ];
 let LANG="en";
